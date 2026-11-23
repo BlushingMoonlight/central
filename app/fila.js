@@ -53,7 +53,10 @@ export async function mandarFila() {
       try { await chamar(i.caminho, i.corpo); await tirar(i.id); mandou = true; } catch (e) { break; }
     }
   } finally { mandando = false; }
-  if (mandou) avisarMudanca();
+  if (mandou) {
+    if (!(await listar()).length && ultimoResultado) ultimoResultado = 'recebido';
+    avisarMudanca();
+  }
 }
 
 const ouvintes = new Set();
