@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR" data-tela="componentes">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Componentes · Central</title>
+<link rel="stylesheet" href="../../assets/design/tokens.css">
+<link rel="stylesheet" href="../../assets/design/componentes.css">
+</head>
+<body>
+<div class="tela"><main class="conteudo">
+<h1>Componentes</h1>
+<p class="texto-2">Direção A · Mensagens. Cada componente em todos os estados. Só uma ação principal por tela; aqui ela aparece uma vez.</p>
+
+<h2>Botões</h2>
+<div class="acoes">
+  <button class="botao botao--principal" type="button">Principal</button>
+  <button class="botao" type="button">Normal</button>
+  <button class="botao botao--leve" type="button">Leve</button>
+  <button class="botao botao--perigo" type="button">Perigoso</button>
+  <button class="botao" type="button" disabled>Desabilitado</button>
+  <a class="link" href="#">Link</a>
+</div>
+
+<h2>Campos</h2>
+<div class="campo"><label for="c1">Normal</label><input id="c1" placeholder="Escreva aqui"></div>
+<div class="campo"><label for="c2">Preenchido</label><input id="c2" value="Trocar o filtro"></div>
+<div class="campo campo--erro"><label for="c3">Com erro</label><input id="c3" value="abc"><span class="campo__erro">A senha precisa de 12 caracteres ou mais.</span></div>
+<label class="marca"><input type="checkbox" checked> Marca ligada</label>
+<label class="marca"><input type="checkbox"> Marca desligada</label>
+
+<h2>Itens de lista</h2>
+<ul class="lista">
+  <li><a class="item" href="#"><span class="item__texto"><strong>Normal</strong><span class="item__det">detalhe</span></span><span class="item__fim">R$ 10,00</span></a></li>
+  <li><div class="item item--vencido"><span class="item__texto"><strong>Vencido</strong><span class="item__det">vence hoje</span></span></div></li>
+  <li><div class="item item--atencao"><span class="item__texto"><strong>Atenção</strong><span class="item__det">vence em breve</span></span></div></li>
+  <li><div class="item item--feito"><span class="item__texto"><strong>Feito</strong><span class="item__det">feita <span data-data="2026-11-21" data-formato="curto"></span></span></span></div></li>
+</ul>
+
+<h2>Conversa</h2>
+<div class="conversa">
+  <p class="dia"><span data-data="2026-11-23"></span></p>
+  <div class="msg msg--ela"><p>mensagem dela</p></div>
+  <div class="msg msg--ela msg--fim"><p>a última do bloco leva a hora</p><span class="hora">09:41</span></div>
+  <p class="sistema">Linha da interface: tarefa criada. <a href="#">Desfazer</a></p>
+  <div class="msg msg--ele msg--fim"><p>mensagem do Jean</p><span class="hora">09:42 · visto</span></div>
+  <div class="msg msg--ele msg--fim"><p>sem conexão</p><span class="hora">Não enviada · sem conexão</span></div>
+  <div class="msg msg--ela msg--audio msg--fim"><p><button class="botao botao--leve" type="button">Ouvir</button>áudio · 0:14</p><span class="hora">09:44</span></div>
+  <p class="escrevendo">escrevendo…</p>
+</div>
+<div class="proposta"><p><strong>Proposta</strong> uma ação irreversível esperando o Jean.</p><div class="acoes"><button class="botao" type="button">Aceitar</button><button class="botao botao--leve" type="button">Recusar</button></div></div>
+
+<h2>Avisos</h2>
+<div class="aviso">Neutro.</div>
+<div class="aviso aviso--certo">Deu certo.</div>
+<div class="aviso aviso--atencao">Atenção.</div>
+<div class="aviso aviso--erro">Erro.</div>
+
+<h2>Números</h2>
+<div class="numeros"><div><span class="pequeno">Pessoal</span><p class="grande">R$ 3.812,40</p></div><div><span class="pequeno">SaaS</span><p class="grande">R$ 1.146,00</p></div></div>
+
+<h2>Vazio e carregando</h2>
+<div class="vazio"><strong>Nada aqui.</strong> O texto diz o que fazer.</div>
+<div class="carregando" role="status" aria-label="Carregando"><span></span><span></span></div>
+
+<h2>Captura</h2>
+<nav class="modos" aria-label="Tipo de captura"><a href="#" aria-current="page">Foto</a><a href="#">Áudio</a><a href="#">Texto</a></nav>
+
+<h2>O perigoso</h2>
+<div class="perigoso"><div class="acoes"><button class="botao botao--perigo" type="button">Apagar</button></div></div>
+</main>
+<nav class="secoes" aria-label="Seções"><a href="#" aria-current="page">Conversa</a><a href="#">Vida</a><a href="#">Agenda</a><a href="#">Finanças</a><a href="#">Pessoas</a></nav>
+</div>
+<div class="prototipo"><button type="button" data-modo="light">Claro</button><button type="button" data-modo="dark">Escuro</button><button type="button" data-modo="auto">Como o aparelho</button> <a href="../index.html">Mapa</a></div>
+<script src="../../assets/design/central.js"></script>
+</body>
+</html>

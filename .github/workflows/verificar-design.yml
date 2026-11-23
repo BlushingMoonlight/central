@@ -1,0 +1,24 @@
+name: Verificar design
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: O protótipo é o que o gerador gera
+        run: python3 scripts/gerar_prototipo.py && git diff --exit-code -- prototipo
+      - name: Instalar o navegador
+        run: npm install --no-save playwright@1.49.1 && npx playwright install --with-deps chromium
+      - run: node scripts/verificar_design.mjs
+      - run: node scripts/jornadas.mjs
