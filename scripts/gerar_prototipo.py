@@ -375,7 +375,7 @@ for cod, tit, pai, ent, corpo in SIMPLES:
 # ---------- Ajustes ----------
 tela("AJ0", "Ajustes", pai="CV", secao=None, estados=padrao(
     lista(item("Avisos", ir="AJ1"), item("Entrada e aparelhos", ir="AJ2"), item("Instalar", ir="AJ3"),
-          item("Painel do Jean", "pede a senha se a sessão do painel venceu", ir="PJ0"))))
+          item("Painel do Jean", ir="PJ0"))))
 tela("AJ1", "Avisos", pai="AJ0", estados=padrao(
     '<p class="texto-2">Os avisos estão desligados neste aparelho.</p>' + acoes(botao("Ligar os avisos", principal=True))
     + "<h2>Na tela bloqueada</h2>"
@@ -394,10 +394,6 @@ def painel(cod, titulo, normal, v=None, pai="PJ0", entrega=1):
     tela(cod, titulo, tipo="painel", pai=pai, entrega=entrega, estados=padrao(normal, v) if entrega == 1 else {"normal": normal})
 
 
-tela("PJ", "Painel do Jean", tipo="passo", pai="AJ0", estados={
-    "normal": "<h1>Painel do Jean</h1>" + campo("Senha", "s", tipo="password") + acoes(botao("Entrar", "PJ0", principal=True)),
-    "erro": "<h1>Painel do Jean</h1>" + campo("Senha", "s2", tipo="password", erro="Senha errada. 4 tentativas antes do bloqueio de 15 minutos.")
-            + acoes(botao("Entrar", "PJ0", principal=True)), "carregando": CARREGANDO})
 PJ_LISTA = lista(*[item(n, ir=c) for c, n in (("PJ1", "Custos"), ("PJ2", "Mundo"), ("PJ3", "Cânone"), ("PJ4", "Pessoas"),
                                                ("PJ5", "Chaves"), ("PJ6", "Cúpula"), ("PJ7", "Carteira e conta"),
                                                ("PJ8", "Cofre e patrimônio"), ("PJ9", "Módulos"), ("PJ10", "Pedidos de função"),
