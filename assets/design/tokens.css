@@ -1,0 +1,107 @@
+/* Central — tokens da direção A · Mensagens (DEC-115).
+   A ÚNICA fonte de cor, tamanho de fonte, espaço, raio, sombra e tempo. Os outros arquivos só usam var(--...).
+   O scripts/verificar_design.mjs bloqueia valor fora daqui e confere o contraste de cada par (4,5:1). */
+:root {
+  color-scheme: light dark;
+  /* Letra */
+  --fonte: -apple-system, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+  --texto-12: 12px;
+  --texto-13: 13px;
+  --texto-15: 15px;
+  --texto-16: 16px;
+  --texto-17: 17px;
+  --texto-20: 20px;
+  --texto-24: 24px;
+  --peso-normal: 400;
+  --peso-forte: 600;
+  --altura-linha: 1.4;
+  /* Espaço */
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-5: 24px;
+  --esp-6: 32px;
+  /* Tamanhos */
+  --alvo: 44px;
+  --alvo-secao: 48px;
+  --topo: 56px;
+  --largura-max: 720px;
+  --largura-passo: 480px;
+  --linha-fina: 1px;
+  --linha-marca: 3px;
+  --camera: 320px;
+  --altura-tela: 100vh;
+  /* Raio */
+  --raio-pequeno: 8px;
+  --raio: 14px;
+  --raio-bolha: 18px;
+  --raio-pilula: 22px;
+  /* Sombra */
+  --sombra: 0 1px 2px rgba(20, 25, 34, 0.08);
+  /* Tempo */
+  --tempo-rapido: 150ms;
+  --tempo: 250ms;
+
+  /* Cor, claro */
+  --fundo: #F7F8FA;
+  --superficie: #FFFFFF;
+  --superficie-2: #EEF0F4;
+  --texto: #151922;
+  --texto-2: #5C6370;
+  --linha: #DDE1E8;
+  --destaque: #2B59C3;
+  --sobre-destaque: #FFFFFF;
+  --bolha-ela: #FFFFFF;
+  --bolha-ele: #2B59C3;
+  --texto-ele: #FFFFFF;
+  --perigo: #B4231A;
+  --sobre-perigo: #FFFFFF;
+  --atencao: #8A5300;
+  --certo: #1B7344;
+  --camera-fundo: #1A1D23;
+  --sobre-camera: #FFFFFF;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fundo: #0E1116;
+    --superficie: #171B22;
+    --superficie-2: #20252E;
+    --texto: #ECEFF4;
+    --texto-2: #A2A9B5;
+    --linha: #2A3039;
+    --destaque: #7FA2FF;
+    --sobre-destaque: #0B1020;
+    --bolha-ela: #1E232B;
+    --bolha-ele: #3B63C9;
+    --texto-ele: #FFFFFF;
+    --perigo: #FF8A80;
+    --sobre-perigo: #2A0705;
+    --atencao: #F2B866;
+    --certo: #6FD39C;
+    --camera-fundo: #000000;
+    --sobre-camera: #FFFFFF;
+  }
+}
+:root[data-theme="dark"] {
+  --fundo: #0E1116;
+  --superficie: #171B22;
+  --superficie-2: #20252E;
+  --texto: #ECEFF4;
+  --texto-2: #A2A9B5;
+  --linha: #2A3039;
+  --destaque: #7FA2FF;
+  --sobre-destaque: #0B1020;
+  --bolha-ela: #1E232B;
+  --bolha-ele: #3B63C9;
+  --texto-ele: #FFFFFF;
+  --perigo: #FF8A80;
+  --sobre-perigo: #2A0705;
+  --atencao: #F2B866;
+  --certo: #6FD39C;
+  --camera-fundo: #000000;
+  --sobre-camera: #FFFFFF;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --tempo-rapido: 0ms; --tempo: 0ms; }
+}
