@@ -39,15 +39,23 @@ const passo1 = {
 const passo4 = {
   ...PASSO, titulo: 'Entrar',
   corpo: () => '<form><h1>Entrar na Central</h1>' + campo('E-mail', 'em', { tipo: 'email', valor: fluxo.email, extra: ' autocomplete="email" required' })
-    + acoes(botao('Mandar código', { principal: true, tipo: 'submit' })) + '</form>',
+    + acoes(botao('Mandar código', { principal: true, tipo: 'submit' }), botao('Já tenho conta', { leve: true, attrs: ' data-ja-tenho' })) + '</form>',
   depois(raiz) {
+    // O app da Tela de Início não divide a memória com o Safari: quem já tem conta chega aqui e precisa de um caminho para entrar.
+    aoTocar(raiz, '[data-ja-tenho]', () => { fluxo.email = raiz.querySelector('#em').value.trim(); ir('entrar'); });
     form(raiz, async (f) => {
       const email = f.querySelector('#em').value.trim();
       try {
         await chamar('primeiro-acesso', { etapa: 'email', email });
         Object.assign(fluxo, { tipo: 'primeiro', email });
         ir('passo-5');
-      } catch (e) { marcarErro(raiz, 'em', erroTexto(e, 'Este e-mail não tem conta na Central.')); }
+      } catch (e) {
+        // A conta já existe (o primeiro acesso já foi feito): vai direto para "Entrar", com o e-mail preenchido.
+        if (e && e.tipo === 'servidor' && /primeiro acesso j[aá] foi feito|j[aá] tem conta|j[aá] existe/i.test(e.message || '')) {
+          fluxo.email = email; ir('entrar'); return;
+        }
+        marcarErro(raiz, 'em', erroTexto(e, 'Este e-mail não tem conta na Central.'));
+      }
     });
   },
 };
@@ -123,7 +131,7 @@ const passo7 = {
 let precisaCodigo = false;
 const entrar = {
   ...PASSO, titulo: 'Entrar',
-  corpo: () => '<form><h1>Entrar</h1><div data-aviso></div>' + campo('E-mail', 'e1', { tipo: 'email', extra: ' autocomplete="email"' })
+  corpo: () => '<form><h1>Entrar</h1><div data-aviso></div>' + campo('E-mail', 'e1', { tipo: 'email', valor: fluxo.email, extra: ' autocomplete="email"' })
     + campo('Senha', 's1', { tipo: 'password', extra: ' autocomplete="current-password"' })
     + '<div data-codigo hidden><p class="texto-2">Aparelho novo. Mandamos 6 números para o seu e-mail. Valem 10 minutos.</p>'
     + campo('Código', 'c1', { extra: ' inputmode="numeric" autocomplete="one-time-code" maxlength="6"' })
