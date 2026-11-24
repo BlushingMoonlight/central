@@ -55,7 +55,8 @@ async function mostrar() {
   const g = ++geracao;
   const html = document.documentElement;
   const raiz = document.getElementById('app');
-  const partes = decodeURIComponent(location.hash.slice(1)).split('/');
+  // Separa pelas barras antes de decodificar: o id de um item ("areas/casa/tarefas/x") vem codificado e fica inteiro (DEC-129).
+  const partes = location.hash.slice(1).split('/').map((p) => { try { return decodeURIComponent(p); } catch (e) { return p; } });
   const cod = TELAS[partes[0]] ? partes[0] : 'CV';
   const args = partes.slice(1);
   const t = TELAS[cod];
