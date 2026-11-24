@@ -24,5 +24,13 @@ export function adaptar(caminho, corpo, d) {
     if (!d.vence) d.vence = d.vence_7_dias || [];
     if (d.gasto_mes) { if (d.pessoal == null) d.pessoal = d.gasto_mes.pessoal; if (d.saas == null) d.saas = d.gasto_mes.saas; }
   }
+  if (caminho === 'painel/pessoas' && acao === 'ler' && Array.isArray(d.pessoas) && d.pessoas.length && d.pessoas[0].modelos && !Array.isArray(d.pessoas[0].modelos)) {
+    // Workflow 91: os modelos e as permissões vêm por pessoa; a tela mostra os da Pepper.
+    const p = d.pessoas.find((x) => x.id === 'pepper') || d.pessoas[0];
+    d.ficha = (p.ficha && p.ficha.texto) || '';
+    d.modelos = Object.entries(p.modelos || {}).map(([camada, m]) => ({ camada, modelo: m.modelo }));
+    d.permissoes = (p.permissoes || []).map((x) => ({ caminho: x.alvo, acesso: [x.ler ? 'lê' : '', x.escrever ? 'grava' : ''].filter(Boolean).join(' e ') }));
+    d.pessoas = d.pessoas.map((x) => Object.assign({ estado: x.ativa ? 'ativa' : 'desligada', teto_usd: x.teto_mes_usd }, x));
+  }
   return d;
 }

@@ -1,4 +1,4 @@
-// Central — Vida (VI0), Área (VI1), Tarefa (VI2), Nova área (VI3), Feitas (VI4) e Anotações do Jean (VI6).
+// Central — Vida (VI0), Área (VI1), Tarefa (VI2), Nova área (VI3), Feitas (VI4), Gato (VI5, DEC-119) e Anotações do Jean (VI6).
 import { chamar } from './api.js';
 import { esc, data, item, lista, botao, acoes, campo, vazio, editor, prazoTexto, reais, hoje, somarDias, aoTocar, comEditor,
   comConfirmacao, ir, marcarErro } from './ui.js';
@@ -39,8 +39,18 @@ const VI0 = {
 
 const VI1 = {
   tipo: 'filho', secao: 'VI0', titulo: (d) => (d ? d.area.nome : 'Área'), voltar: ['VI0', 'Vida'],
-  carregar: (args) => vida('area', { area: args[0] }),
+  carregar: async (args) => {
+    const d = await vida('area', { area: args[0] });
+    // Na área gatos, os gatos vêm antes das tarefas (DEC-119).
+    if (args[0] === 'gatos') { try { d.gatos = (await chamar('gatos', { acao: 'gatos' })).gatos || []; } catch (e) { d.gatos = []; } }
+    return d;
+  },
   corpo(d) {
+    const gatos = (d.gatos || []).length ? '<h2>Gatos</h2>' + lista(...d.gatos.map((g) => item(esc(g.nome), {
+      det: g.vacina_proxima ? 'vacina ' + data(g.vacina_proxima, true) : (g.racao_acaba ? 'ração acaba ' + data(g.racao_acaba, true) : ''), ir: 'VI5/' + enc(g.id) }))) : '';
+    return gatos + VI1.lista(d);
+  },
+  lista(d) {
     const nova = botao('Nova tarefa nesta área', { ir: 'K3/' + enc(d.area.id), principal: true });
     const com = d.com_prazo || [], sem = d.sem_prazo || [];
     const notas = d.area.notas ? '<h2>Notas da área</h2><p class="texto-2">' + esc(d.area.notas) + '</p>' : '';
@@ -110,6 +120,33 @@ const VI4 = {
     : vazio('Nenhuma tarefa feita ainda.')),
 };
 
+const VI5 = {
+  tipo: 'filho', secao: 'VI0', titulo: (d) => (d ? d.gato.nome : 'Gato'), voltar: ['VI1/gatos', 'Gatos'],
+  carregar: (args) => chamar('gatos', { acao: 'gato', id: args.join('/') }),
+  corpo(d) {
+    const g = d.gato;
+    const linha = (rot, v, dt) => (v ? item(rot, { det: dt ? data(v) : esc(v) }) : '');
+    return lista(linha('Nascimento', g.nascimento, true), linha('Vacina', g.vacina_ultima, true), linha('Próxima vacina', g.vacina_proxima, true),
+      linha('Vermífugo', g.vermifugo_ultimo, true), linha('Próximo vermífugo', g.vermifugo_proximo, true), linha('Ração', g.racao),
+      linha('Ração acaba', g.racao_acaba, true), linha('Remédio', g.remedio), linha('Remédio até', g.remedio_ate, true), linha('Veterinário', g.veterinario))
+      + editor('ed-reg', campo('O quê', 'oque', { opcoes: [['registrar_vacina', 'Vacina'], ['registrar_vermifugo', 'Vermífugo'], ['registrar_remedio', 'Remédio']], nome: 'oque' })
+        + campo('Quando', 'quando', { tipo: 'date', valor: hoje(), nome: 'data' }) + campo('Próxima, ou até quando', 'prox', { tipo: 'date', nome: 'proxima' })
+        + campo('Remédio', 'rem', { nome: 'remedio' }))
+      + acoes(botao('Registrar vacina ou remédio', { principal: true, attrs: ' data-editor="ed-reg" data-registrar' }),
+        botao('Ração acabando', { leve: true, attrs: ' data-racao' }), botao('Falar sobre isto', { leve: true, attrs: ' data-falar' }));
+  },
+  depois(raiz, d, ctx) {
+    const g = d.gato;
+    comEditor(raiz, '[data-registrar]', async (v) => {
+      if (v.oque === 'registrar_remedio' && !v.remedio) { marcarErro(raiz, 'rem', 'Escreva o nome do remédio.'); return; }
+      await chamar('gatos', { acao: v.oque, id: g.id, data: v.data, proxima: v.proxima || undefined, remedio: v.remedio || undefined, ate: v.proxima || undefined });
+      ctx.recarregar();
+    });
+    aoTocar(raiz, '[data-racao]', async () => { await chamar('gatos', { acao: 'racao_acabando', id: g.id }); ctx.recarregar(); });
+    raiz.querySelector('[data-falar]').addEventListener('click', () => falarSobre(`sobre o ${g.nome}: `));
+  },
+};
+
 const VI6 = {
   tipo: 'filho', secao: 'VI0', titulo: 'Anotações do Jean', voltar: ['VI0', 'Vida'],
   carregar: () => vida('anotacoes'),
@@ -119,4 +156,4 @@ const VI6 = {
     : vazio('Nenhuma anotação.')),
 };
 
-export default { VI0, VI1, VI2, VI3, VI4, VI6 };
+export default { VI0, VI1, VI2, VI3, VI4, VI5, VI6 };

@@ -116,7 +116,7 @@ function conferirTela() {
 const estatico = process.argv.includes('--estatico');
 let contas = { telas: 0, estados: 0, app: 0 };
 // As rotas do app da entrega 1 (docs/fluxo/arvore.md, "Ordem de implementação"), com ids dos dados de app/demo.js.
-const ROTAS_APP = ['CV', 'CV1', 'CV2', 'CV3', 'K1', 'K2', 'K3', 'K4', 'VI0', 'VI1/casa', 'VI2/t-filtro', 'VI3', 'VI4', 'VI6',
+const ROTAS_APP = ['CV', 'CV1', 'CV2', 'CV3', 'K1', 'K2', 'K3', 'K4', 'VI0', 'VI1/casa', 'VI2/t-filtro', 'VI3', 'VI4', 'VI5/gatos/mingau', 'VI1/gatos', 'VI6',
   'AG0', 'AG1/c1', 'AG2', 'AG3/carla', 'AG4', 'FI0', 'FI1', 'FI1/saas', 'FI2/g1', 'FI3', 'FI4/a2', 'FI5', 'FI6', 'FI7', 'FI8', 'FI9',
   'PE1', 'PE4', 'PE5', 'AJ0', 'AJ1', 'AJ2', 'AJ3', 'PJ0', 'PJ1', 'PJ2', 'PJ3', 'PJ4', 'PJ5', 'PJ6', 'PJ7', 'PJ9', 'PJ10', 'PJ12', 'PJ13',
   'passo-1', 'passo-4', 'passo-5', 'passo-6', 'passo-7', 'entrar', 'esqueci'];
