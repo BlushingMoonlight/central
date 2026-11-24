@@ -185,7 +185,7 @@ function painelLer(tela, estado) {
     ordens: [{ texto: 'Vendeu metade do banco', motivo: 'não gostei do que li sobre juros', data: '2026-11-21' }] };
     case 'modulos': return { modulos: [{ id: 'tarefas', nome: 'Tarefas', det: 'vida real · entrega 1', entrega: 1, ligado: true },
       { id: 'investimentos', nome: 'Investimentos', det: 'mundo · entrega 1 · US$ 0,90 no mês', entrega: 1, ligado: true },
-      { id: 'gatos', nome: 'Gatos', det: 'vida real · entrega 2', entrega: 2, ligado: false }] };
+      { id: 'gatos', nome: 'Gatos', det: 'vida real · entrega 1', entrega: 1, ligado: true }] };
     case 'pedidos': return { pedidos: v(S.pedidos, []) };
     case 'registros': return { falhas: [], registro: v([{ hora: '13:05', texto: 'conversa', det: 'Pepper', usd: 0.01 }, { hora: '13:10', texto: 'ciclo do motor', usd: 0.02 }], []) };
     case 'sistema': return { servicos: [['Servidor', 'no ar'], ['OpenAI', 'no ar'], ['Cotações (Yahoo Finance)', 'no ar'], ['Notícias (RSS)', 'no ar'], ['Clima e câmbio', 'no ar'],
@@ -227,7 +227,10 @@ export async function responder(caminho, corpo, estado) {
     if (c.acao === 'desfazer') S.combinados = S.combinados.filter((x) => x.id !== c.id);
     r = { combinados: vazioOu(estado, S.combinados, []) };
   } else if (caminho === 'captura') r = {};
-  else if (caminho === 'vida') r = vida(c, estado);
+  else if (caminho === 'gatos') {
+    const G = [{ id: 'gatos/mingau', nome: 'Mingau', nascimento: '2021-03-14', vacina_proxima: '2027-01-10', racao: 'ração de filhote', racao_acaba: '2026-12-05', veterinario: 'Dra. Paula, clínica do bairro', historico: [] }];
+    r = c.acao === 'gato' ? { gato: G[0] } : c.acao === 'gatos' ? { gatos: vazioOu(estado, G, []) } : {};
+  } else if (caminho === 'vida') r = vida(c, estado);
   else if (caminho === 'agenda') r = agenda(c, estado);
   else if (caminho === 'financas') r = financas(c, estado);
   else if (caminho === 'pessoa') r = pessoa(c, estado);

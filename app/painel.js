@@ -1,7 +1,7 @@
 // Central — o Painel do Jean (PJ0 a PJ13, só os da entrega 1). Entra-se pelos Ajustes, sem segunda senha (DEC-116).
 // Cada tela chama painel/<tela> com {acao:'ler'} e as ações da tela.
 import { chamar } from './api.js';
-import { esc, data, item, lista, botao, acoes, campo, vazio, editor, dolares, porcento, aoTocar, comEditor, comConfirmacao } from './ui.js';
+import { esc, data, item, lista, botao, acoes, campo, vazio, editor, dolares, porcento, aoTocar, comEditor, comConfirmacao, marcarErro } from './ui.js';
 
 const painel = (tela, acao = 'ler', extra = {}) => chamar('painel/' + tela, { acao, ...extra });
 const numeros = (...pares) => '<div class="numeros">' + pares.map(([r, v, extra]) => `<div><span class="pequeno">${r}</span><p class="grande">${v}</p>`
@@ -78,15 +78,24 @@ const PJ4 = {
   corpo: (d) => lista(...(d.pessoas || []).map((p) => item(esc(p.nome), { det: `${esc(p.estado)} · teto ${dolares(p.teto_usd)} por mês` })))
     + '<h2>Modelos da Pepper</h2>' + lista(...(d.modelos || []).map((m) => item(esc(m.camada), { det: esc(m.modelo) })))
     + '<h2>Permissões</h2>' + lista(...(d.permissoes || []).map((p) => item(esc(p.caminho), { det: esc(p.acesso) })))
-    + editor('ed-ficha', campo('O que mudar na ficha', 'fi', { area: true, nome: 'texto' }))
-    + editor('ed-modelos', campo('O que mudar nos modelos', 'mo', { area: true, nome: 'texto' }))
+    + editor('ed-ficha', campo('A ficha inteira', 'fi', { area: true, nome: 'texto', valor: d.ficha || '' })
+      + '<label class="marca"><input type="checkbox" name="confirmo"> Confirmo: a ficha nova vale já, e os testes rodam em seguida</label>')
+    + editor('ed-modelos', campo('Camada', 'mc', { opcoes: [['mente', 'Mente'], ['resposta', 'Resposta'], ['critica', 'Crítica'], ['motor', 'Motor'], ['verificador', 'Verificador']], nome: 'camada' })
+      + campo('Modelo', 'mo', { nome: 'modelo' })
+      + '<label class="marca"><input type="checkbox" name="testes"> Os testes de personalidade já rodaram com esse modelo</label>')
     + acoes(botao('Mudar a ficha', { leve: true, attrs: ' data-editor="ed-ficha" data-ficha' }), botao('Mudar os modelos', { leve: true, attrs: ' data-editor="ed-modelos" data-modelos' }))
-    + '<p class="pequeno">Mudar a personalidade ou os modelos roda os testes antes.</p>'
+    + '<p class="pequeno">A ficha nova roda os testes de personalidade em seguida; o modelo só muda com os testes rodados. Desligar pede a chave de demissão ligada.</p>'
     + '<div class="perigoso">' + acoes(botao('Desligar a Pepper', { perigo: true, attrs: ' data-desligar' })) + '</div>',
   depois(raiz, d, ctx) {
-    comEditor(raiz, '[data-ficha]', async (v) => { await painel('pessoas', 'mudar_ficha', { pessoa_id: 'pepper', texto: v.texto }); ctx.recarregar(); });
-    comEditor(raiz, '[data-modelos]', async (v) => { await painel('pessoas', 'mudar_modelo', { pessoa_id: 'pepper', texto: v.texto }); ctx.recarregar(); });
-    comConfirmacao(raiz, '[data-desligar]', async () => { await painel('pessoas', 'desligar', { pessoa_id: 'pepper' }); ctx.recarregar(); });
+    comEditor(raiz, '[data-ficha]', async (v) => {
+      if (!v.confirmo) { marcarErro(raiz, 'fi', 'Marque a confirmação.'); return; }
+      await painel('pessoas', 'mudar_ficha', { pessoa_id: 'pepper', texto: v.texto, confirmar: true }); ctx.recarregar();
+    });
+    comEditor(raiz, '[data-modelos]', async (v) => {
+      if (!v.modelo) { marcarErro(raiz, 'mo', 'Escreva o modelo.'); return; }
+      await painel('pessoas', 'mudar_modelo', { pessoa_id: 'pepper', camada: v.camada, modelo: v.modelo, testes_rodados: !!v.testes }); ctx.recarregar();
+    });
+    comConfirmacao(raiz, '[data-desligar]', async () => { await painel('pessoas', 'desligar', { pessoa_id: 'pepper', confirmar: true }); ctx.recarregar(); });
   },
 };
 
