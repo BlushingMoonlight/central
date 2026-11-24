@@ -1,6 +1,6 @@
 // Central — service worker. Guarda o "shell" do app (HTML, CSS, JS, ícones) para abrir sem internet, sempre buscando
 // primeiro na rede. NUNCA guarda as respostas da API (que são POST, em outro endereço). Recebe o push e abre a Conversa.
-const CACHE = 'central-shell-1';
+const CACHE = 'central-shell-2';
 const SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'assets/design/tokens.css', 'assets/design/componentes.css',
   'app/main.js', 'app/api.js', 'app/ui.js', 'app/fila.js', 'app/midia.js', 'app/conversa.js', 'app/captura.js', 'app/entrada.js',
   'app/vida.js', 'app/agenda.js', 'app/financas.js', 'app/pessoas.js', 'app/ajustes.js', 'app/painel.js',
@@ -29,7 +29,7 @@ self.addEventListener('push', (e) => {
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = {}; }
   const titulo = d.texto ? 'Pepper' : 'Nova mensagem';
   e.waitUntil(self.registration.showNotification(titulo, {
-    body: d.texto || '', icon: 'app/icones/icone-192.png', badge: 'app/icones/icone-192.png', tag: 'central-conversa', data: { url: '/#CV' },
+    body: d.texto || '', icon: 'app/icones/icone-192.png', badge: 'app/icones/icone-192.png', tag: 'central-conversa', data: { url: './#CV' },
   }));
 });
 
@@ -37,7 +37,7 @@ self.addEventListener('push', (e) => {
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((janelas) => {
-    for (const j of janelas) if ('focus' in j) { j.navigate('/#CV').catch(() => {}); return j.focus(); }
-    return self.clients.openWindow('/#CV');
+    for (const j of janelas) if ('focus' in j) { j.navigate('./#CV').catch(() => {}); return j.focus(); }
+    return self.clients.openWindow('./#CV');
   }));
 });
