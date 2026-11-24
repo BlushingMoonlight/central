@@ -71,5 +71,10 @@ export async function chamar(caminho, corpo = {}) {
   try { dados = await resposta.json(); } catch (e) { /* resposta sem JSON */ }
   if (!dados) throw new ErroApi('', 'rede');
   if (!resposta.ok || !dados.ok) throw new ErroApi(dados.erro || '', 'servidor');
+  // O servidor devolve o id do aparelho (na entrada e no primeiro acesso): fica sendo o id deste aparelho, para o próximo
+  // pedido (com o código) achar o mesmo aparelho.
+  if (typeof dados.aparelho_id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dados.aparelho_id)) {
+    gravar(CHAVE_APARELHO, dados.aparelho_id);
+  }
   return adaptar(caminho, corpo, dados);
 }
