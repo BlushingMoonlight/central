@@ -6,6 +6,12 @@ import { ligarAvisos } from './midia.js';
 
 // O que a pessoa já disse neste fluxo (só na memória da página).
 const fluxo = { tipo: 'primeiro', email: '', codigo: '' };
+// "Mandar outro código" só depois de 60 segundos do último envio (o servidor confere também).
+function esperar(b) {
+  if (!b) return;
+  b.disabled = true;
+  setTimeout(() => { b.disabled = false; }, modoDemo ? 0 : 60000);
+}
 const caminho = () => (fluxo.tipo === 'esqueci' ? 'esqueci' : 'primeiro-acesso');
 
 const PASSO = { tipo: 'entrada' };
@@ -56,6 +62,7 @@ const passo5 = {
     const cd = raiz.querySelector('#cd');
     const outro = raiz.querySelector('[data-outro]');
     cd.focus();
+    esperar(outro);
     const conferir = async () => {
       const codigo = cd.value.replace(/\D/g, '');
       if (codigo.length !== 6) return;
@@ -64,14 +71,15 @@ const passo5 = {
         fluxo.codigo = codigo;
         ir('passo-6');
       } catch (e) {
-        marcarErro(raiz, 'cd', erroTexto(e, 'Código errado ou vencido.'));
+        marcarErro(raiz, 'cd', erroTexto(e, 'Código errado. Use o código do e-mail mais recente.'));
         outro.classList.replace('botao--leve', 'botao--principal');
       }
     };
     cd.addEventListener('input', conferir);
     form(raiz, conferir);
     aoTocar(raiz, '[data-outro]', async () => {
-      await chamar(caminho(), { etapa: 'email', email: fluxo.email });
+      await chamar(caminho(), { etapa: 'email', email: fluxo.email, reenviar: true });
+      esperar(outro);
       cd.value = '';
       marcarErro(raiz, 'cd', '');
       outro.classList.replace('botao--principal', 'botao--leve');
@@ -118,7 +126,8 @@ const entrar = {
   corpo: () => '<form><h1>Entrar</h1><div data-aviso></div>' + campo('E-mail', 'e1', { tipo: 'email', extra: ' autocomplete="email"' })
     + campo('Senha', 's1', { tipo: 'password', extra: ' autocomplete="current-password"' })
     + '<div data-codigo hidden><p class="texto-2">Aparelho novo. Mandamos 6 números para o seu e-mail. Valem 10 minutos.</p>'
-    + campo('Código', 'c1', { extra: ' inputmode="numeric" autocomplete="one-time-code" maxlength="6"' }) + '</div>'
+    + campo('Código', 'c1', { extra: ' inputmode="numeric" autocomplete="one-time-code" maxlength="6"' })
+    + acoes(botao('Mandar outro código', { leve: true, attrs: ' data-outro' })) + '</div>'
     + acoes(botao('Entrar', { principal: true, tipo: 'submit' }), botao('Esqueci a senha', { ir: 'esqueci', leve: true })) + '</form>',
   depois(raiz) {
     precisaCodigo = false;
@@ -128,6 +137,7 @@ const entrar = {
       try {
         const r = await chamar('entrar', corpo);
         if (r.precisa_codigo) {
+          if (!precisaCodigo) esperar(raiz.querySelector('[data-outro]'));
           precisaCodigo = true;
           raiz.querySelector('[data-codigo]').hidden = false;
           raiz.querySelector('#c1').focus();
@@ -138,6 +148,16 @@ const entrar = {
       } catch (e) {
         raiz.querySelector('[data-aviso]').innerHTML = '<div class="aviso aviso--erro" role="alert">'
           + esc(erroTexto(e, 'E-mail ou senha errados. Depois de 5 tentativas, a entrada fica bloqueada por 15 minutos.')) + '</div>';
+      }
+    });
+    aoTocar(raiz, '[data-outro]', async () => {
+      const f = raiz.querySelector('form');
+      try {
+        await chamar('entrar', { email: f.querySelector('#e1').value.trim(), senha: f.querySelector('#s1').value, aparelho: aparelho(), reenviar: true });
+        esperar(raiz.querySelector('[data-outro]'));
+        raiz.querySelector('[data-aviso]').innerHTML = '<div class="aviso aviso--certo" role="status">Mandamos outro código. Use o do e-mail mais recente.</div>';
+      } catch (e) {
+        raiz.querySelector('[data-aviso]').innerHTML = '<div class="aviso aviso--erro" role="alert">' + esc(erroTexto(e, 'Não deu para mandar o código. Tente de novo.')) + '</div>';
       }
     });
   },
