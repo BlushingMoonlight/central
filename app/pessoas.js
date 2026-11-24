@@ -51,7 +51,7 @@ const PE5 = {
   },
   depois(raiz, d) {
     const v = (d.vence || [])[0];
-    if (v) aoTocar(raiz, '[data-confirmar]', async () => { await pessoa('pagar_salario', { mes: v.mes }); ir('PE1'); });
+    if (v) aoTocar(raiz, '[data-confirmar]', async () => { await pessoa('pagar_salario', { mes: v.mes, confirmar: true }); ir('PE1'); });
   },
 };
 

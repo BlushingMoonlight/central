@@ -65,7 +65,12 @@ const VI1 = {
 const VI2 = {
   tipo: 'filho', secao: 'VI0', titulo: 'Tarefa',
   voltar: (d) => (d ? ['VI1/' + enc(d.tarefa.area_id), d.tarefa.area] : ['VI0', 'Vida']),
-  carregar: (args) => vida('tarefa', { id: args[0] }),
+  carregar: async (args) => {
+    const d = await vida('tarefa', { id: args[0] });
+    // O workflow 41 não manda as áreas com a tarefa: "Mudar de área" precisa delas.
+    if (!d.areas) { try { d.areas = (await vida('hoje')).areas || []; } catch (e) { d.areas = []; } }
+    return d;
+  },
   corpo(d) {
     const t = d.tarefa;
     const hist = (t.historico || []).map((h) => h.o_que + ' ' + data(h.quando, true)).join(' · ');
