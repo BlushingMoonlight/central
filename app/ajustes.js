@@ -34,7 +34,7 @@ const AJ2 = {
   tipo: 'filho', titulo: 'Entrada e aparelhos', voltar: ['AJ0', 'Ajustes'],
   carregar: () => aparelho('listar'),
   corpo: (d) => lista(...(d.aparelhos || []).map((a) => item(esc(a.nome), {
-    det: a.este ? 'este aparelho · lembrado até ' + data(a.lembrado_ate, true) : 'último uso ' + data(a.ultimo_uso, true) })))
+    det: a.este ? 'este aparelho' + (a.lembrado_ate ? ' · lembrado até ' + data(a.lembrado_ate, true) : '') : 'último uso ' + data(a.ultimo_uso, true) })))
     + editor('ed-senha', campo('Senha atual', 'sa', { tipo: 'password', nome: 'atual', extra: ' autocomplete="current-password"' })
       + campo('Senha nova', 'sn', { tipo: 'password', nome: 'nova', extra: ' autocomplete="new-password"' }) + '<p class="pequeno">12 caracteres ou mais.</p>')
     + acoes(botao('Trocar a senha', { principal: true, attrs: ' data-editor="ed-senha" data-senha' }), botao('Sair', { leve: true, attrs: ' data-sair' }))

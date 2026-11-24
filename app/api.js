@@ -66,7 +66,12 @@ export async function chamar(caminho, corpo = {}) {
   } catch (e) {
     throw new ErroApi('', 'rede');
   }
-  if (resposta.status === 401) { gravar(CHAVE_TOKEN, ''); throw new ErroApi('', 'sessao'); }
+  // Só um 401 da sessão principal tira o Jean da conta. Um 401 do painel (DEC-123) vira um erro da tela: o painel usa a
+  // mesma sessão (DEC-116), e uma recusa ali nunca apaga o token da conta.
+  if (resposta.status === 401) {
+    if (caminho.startsWith('painel/')) throw new ErroApi('O painel não abriu. Volte e toque em "Painel do Jean" de novo.', 'servidor');
+    gravar(CHAVE_TOKEN, ''); throw new ErroApi('', 'sessao');
+  }
   let dados = null;
   try { dados = await resposta.json(); } catch (e) { /* resposta sem JSON */ }
   if (!dados) throw new ErroApi('', 'rede');

@@ -29,11 +29,18 @@ const PJ1 = {
   carregar: () => painel('custos'),
   corpo: (d) => '<h2>Pepper, hoje, por camada</h2>' + lista(...(d.camadas || []).map((c) => item(esc(c.nome), { det: esc(c.det), fim: dolares(c.usd) })))
     + '<h2>No mês</h2>' + lista(...(d.mes || []).map((m) => item(esc(m.pessoa), { det: `teto ${dolares(m.teto_usd)}, com o motor dentro`, fim: dolares(m.usd) })))
+    + ((d.mensagens || []).length ? '<h2>Por mensagem</h2>' + lista(...d.mensagens.map((m) => item(esc(m.hora) + ' · ' + esc(String(m.texto || '').slice(0, 60)),
+      { det: esc(m.camadas), fim: dolares(m.usd) }))) : '')
     + editor('ed-teto', campo('Teto do mês (US$)', 'tm', { valor: String(d.teto_mes_usd), nome: 'mes', extra: ' inputmode="decimal"' })
       + campo('Teto do motor por dia (US$)', 'td', { valor: String(d.teto_motor_dia_usd), nome: 'motor_dia', extra: ' inputmode="decimal"' }))
     + acoes(botao('Mudar um teto', { principal: true, attrs: ' data-editor="ed-teto" data-teto' })),
   depois(raiz, d, ctx) {
-    comEditor(raiz, '[data-teto]', async (v) => { await painel('custos', 'mudar_teto', { mes: numeroDe(v.mes), motor_dia: numeroDe(v.motor_dia) }); ctx.recarregar(); });
+    // O workflow 91 muda um teto por vez: só manda o que mudou.
+    comEditor(raiz, '[data-teto]', async (v) => {
+      for (const [campo, antes] of [['mes', d.teto_mes_usd], ['motor_dia', d.teto_motor_dia_usd]])
+        if (numeroDe(v[campo]) !== Number(antes)) await painel('custos', 'mudar_teto', { pessoa_id: 'pepper', campo, valor: numeroDe(v[campo]) });
+      ctx.recarregar();
+    });
   },
 };
 
@@ -48,8 +55,8 @@ const PJ2 = {
     + acoes(botao(d.pausado ? 'Retomar o mundo' : 'Pausar o mundo', { principal: true, attrs: ' data-pausar' }),
       botao('Mudar o ritmo', { leve: true, attrs: ' data-editor="ed-ritmo" data-ritmo' })),
   depois(raiz, d, ctx) {
-    aoTocar(raiz, '[data-pausar]', async () => { await painel('mundo', d.pausado ? 'retomar' : 'pausar'); ctx.recarregar(); });
-    comEditor(raiz, '[data-ritmo]', async (v) => { await painel('mundo', 'mudar_ritmo', { min: Number(v.min), max: Number(v.max) }); ctx.recarregar(); });
+    aoTocar(raiz, '[data-pausar]', async () => { await painel('mundo', d.pausado ? 'retomar' : 'pausar', { pessoa_id: 'pepper', motivo: 'pelo painel' }); ctx.recarregar(); });
+    comEditor(raiz, '[data-ritmo]', async (v) => { await painel('mundo', 'mudar_ritmo', { pessoa_id: 'pepper', min_minutos: Number(v.min), max_minutos: Number(v.max) }); ctx.recarregar(); });
   },
 };
 
@@ -68,7 +75,7 @@ const PJ3 = {
     }));
   },
   depois(raiz, d, ctx) {
-    comEditor(raiz, '[data-corrigir]', async (v, b) => { await painel('canone', 'corrigir', { id: b.dataset.corrigir, texto: v.texto }); ctx.recarregar(); });
+    comEditor(raiz, '[data-corrigir]', async (v, b) => { await painel('canone', 'corrigir', { evento_id: Number(b.dataset.corrigir), texto: v.texto }); ctx.recarregar(); });
   },
 };
 
@@ -106,10 +113,14 @@ const PJ5 = {
     + editor('ed-chaves', (d.chaves || []).map((c) => `<label class="marca"><input type="checkbox" name="${esc(c.id)}"${c.ligada ? ' checked' : ''}> ${esc(c.nome)}</label>`).join(''))
     + acoes(botao('Mudar as chaves', { principal: true, attrs: ' data-editor="ed-chaves" data-chaves' }))
     + '<p class="pequeno">Uma chave muda a direção aos poucos. Um evento forte mexe na hora.</p>'
-    + '<h2>Pelo Jean, agora</h2>' + lista(...(d.sentimentos || []).map((s) => item(esc(s.nome), { fim: `${s.valor} · ${esc(s.tendencia)}` })))
+    + '<h2>Pelo Jean, agora</h2>' + lista(...(d.sentimentos || []).map((s) => item(esc(s.nome), { fim: String(s.valor) + (s.tendencia ? ' · ' + esc(s.tendencia) : '') })))
     + (d.humor ? `<p class="pequeno">Humor: ${esc(d.humor)}.</p>` : ''),
   depois(raiz, d, ctx) {
-    comEditor(raiz, '[data-chaves]', async (v) => { await painel('chaves', 'mudar_chave', { chaves: v }); ctx.recarregar(); });
+    // O workflow 91 muda uma chave por vez: só manda as que mudaram.
+    comEditor(raiz, '[data-chaves]', async (v) => {
+      for (const c of d.chaves || []) if (!!v[c.id] !== !!c.ligada) await painel('chaves', 'mudar_chave', { pessoa_id: 'pepper', tipo: c.id, ligada: !!v[c.id] });
+      ctx.recarregar();
+    });
   },
 };
 
@@ -118,10 +129,21 @@ const PJ6 = {
   carregar: () => painel('cupula'),
   corpo: (d) => [['Amigos vivos', d.amigos], ['Conhecidos distantes', d.conhecidos], ['Inspirações', d.inspiracoes]]
     .map(([t, l]) => `<h2>${t}</h2>` + ((l || []).length ? lista(...l.map((n) => item(esc(n)))) : '<p class="texto-2">Ninguém.</p>')).join('')
-    + editor('ed-cupula', campo('Quem entra ou sai', 'cu', { area: true, nome: 'texto' }))
+    + editor('ed-cupula', campo('Nome', 'cu', { nome: 'nome' })
+      + campo('Grupo', 'cg', { opcoes: [['amigos', 'Amigos vivos'], ['lente', 'Conhecidos distantes'], ['inspiracao', 'Inspirações']], valor: 'amigos', nome: 'grupo' })
+      + campo('O que fazer', 'co', { opcoes: [['por', 'Entra'], ['tirar', 'Sai']], valor: 'por', nome: 'tipo' }))
     + acoes(botao('Mudar a cúpula', { principal: true, attrs: ' data-editor="ed-cupula" data-cupula' })),
   depois(raiz, d, ctx) {
-    comEditor(raiz, '[data-cupula]', async (v) => { await painel('cupula', 'mudar', { texto: v.texto }); ctx.recarregar(); });
+    comEditor(raiz, '[data-cupula]', async (v) => {
+      const nome = String(v.nome || '').trim();
+      if (!nome) { marcarErro(raiz, 'cu', 'Escreva o nome.'); return; }
+      if (v.tipo === 'tirar') {
+        const m = (d._membros || []).find((x) => x.nome.toLowerCase() === nome.toLowerCase());
+        if (!m) { marcarErro(raiz, 'cu', 'Esse nome não está na cúpula.'); return; }
+        await painel('cupula', 'mudar', { tipo: 'tirar', id: m.id });
+      } else await painel('cupula', 'mudar', { tipo: 'por', pessoa_id: 'pepper', nome, grupo: v.grupo });
+      ctx.recarregar();
+    });
   },
 };
 
@@ -142,7 +164,7 @@ const PJ9 = {
   corpo: (d) => lista(...(d.modulos || []).map((m) => item(esc(m.nome), { det: esc(m.det) + (m.ligado ? '' : ' · desligado'),
     acao: m.entrega === 1 ? botao(m.ligado ? 'Desligar' : 'Ligar', { leve: true, attrs: ` data-modulo="${esc(m.id)}" data-ligado="${m.ligado ? 1 : 0}"` }) : '' }))),
   depois(raiz, d, ctx) {
-    aoTocar(raiz, '[data-modulo]', async (b) => { await painel('modulos', b.dataset.ligado === '1' ? 'desligar' : 'ligar', { id: b.dataset.modulo }); ctx.recarregar(); });
+    aoTocar(raiz, '[data-modulo]', async (b) => { await painel('modulos', b.dataset.ligado === '1' ? 'desligar' : 'ligar', { nome: b.dataset.modulo }); ctx.recarregar(); });
   },
 };
 
@@ -157,7 +179,7 @@ const PJ10 = {
         attrs: ` data-pedido="${esc(p.id)}" data-acao="${(p.estado === 'com_jean' || p.estado === 'com_o_jean') ? 'pronto' : 'levei_ao_revisor'}"` }) })));
   },
   depois(raiz, d, ctx) {
-    aoTocar(raiz, '[data-pedido]', async (b) => { await painel('pedidos', b.dataset.acao, { id: b.dataset.pedido }); ctx.recarregar(); });
+    aoTocar(raiz, '[data-pedido]', async (b) => { await painel('pedidos', b.dataset.acao, { id: Number(b.dataset.pedido) }); ctx.recarregar(); });
   },
 };
 
@@ -176,9 +198,15 @@ const PJ13 = {
   ...P, titulo: 'Sistema',
   carregar: () => painel('sistema'),
   corpo: (d) => lista(...(d.servicos || []).map((s) => item(esc(s.nome), { det: esc(s.estado), cls: s.estado === 'fora' ? 'item--vencido' : '' })))
-    + acoes(botao('Fazer backup agora', { principal: true, attrs: ' data-backup' })),
+    + acoes(botao('Fazer backup agora', { principal: true, attrs: ' data-backup' }))
+    + '<h2>Testes de personalidade</h2>' + ((d.testes || []).length
+      ? lista(...d.testes.map((t) => item(esc(t.nome), { det: esc(t.det), cls: t.passou ? '' : 'item--vencido' })))
+      : '<p class="texto-2">Os testes ainda não rodaram.</p>')
+    + acoes(botao('Rodar os testes', { leve: true, attrs: ' data-testes' }))
+    + '<p class="pequeno">Os testes rodam com a IA de verdade e levam alguns minutos. Toque em Sistema de novo para ver o resultado.</p>',
   depois(raiz, d, ctx) {
     aoTocar(raiz, '[data-backup]', async () => { await painel('sistema', 'fazer_backup_agora'); ctx.recarregar(); });
+    aoTocar(raiz, '[data-testes]', async () => { await painel('sistema', 'rodar_testes', { pessoa_id: 'pepper' }); ctx.recarregar(); });
   },
 };
 

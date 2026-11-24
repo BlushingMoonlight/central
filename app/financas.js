@@ -126,7 +126,8 @@ const FI6 = {
   },
 };
 
-const NOVO_CARTAO = editor('ed-cartao', campo('Nome do cartão', 'cn', { nome: 'nome' }) + campo('Fecha no dia', 'cf', { nome: 'fecha', extra: ' inputmode="numeric"' })
+const NOVO_CARTAO = editor('ed-cartao', campo('Nome do cartão', 'cn', { nome: 'nome' }) + campo('Os 4 últimos números', 'cl', { nome: 'final', extra: ' inputmode="numeric" maxlength="4"' })
+  + campo('Fecha no dia', 'cf', { nome: 'fecha', extra: ' inputmode="numeric"' })
   + campo('Vence no dia', 'cv', { nome: 'vence', extra: ' inputmode="numeric"' })
   + '<label class="marca"><input type="checkbox" name="uso_unico"> Virtual de uso único</label>');
 const FI7 = {
@@ -140,26 +141,29 @@ const FI7 = {
   depois(raiz, d, ctx) {
     comEditor(raiz, '[data-novo]', async (v) => {
       if (!v.nome.trim()) { marcarErro(raiz, 'cn', 'Escreva o nome do cartão.'); return; }
-      await fin('novo_cartao', v);
+      if (!/^\d{4}$/.test(String(v.final || '').trim())) { marcarErro(raiz, 'cl', 'Escreva os 4 últimos números.'); return; }
+      // Os nomes do workflow 43: o cartão é de crédito, e o número inteiro nunca é pedido nem guardado.
+      await fin('novo_cartao', { tipo: 'credito', apelido: v.nome.trim(), final: v.final.trim(), dia_fechamento: v.fecha, dia_vencimento: v.vence,
+        virtual_uso_unico: v.uso_unico === true });
       ctx.recarregar();
     });
   },
 };
 
 const NOVO_DESEJO = editor('ed-desejo', campo('O quê', 'dq', { nome: 'titulo' }) + campo('Preço estimado', 'dp', { nome: 'valor', extra: ' inputmode="decimal"' })
-  + campo('Prioridade', 'dr', { opcoes: [['normal', 'Normal'], ['alta', 'Alta']], valor: 'normal', nome: 'prioridade' }));
+  + campo('Prioridade', 'dr', { opcoes: [['media', 'Normal'], ['alta', 'Alta'], ['baixa', 'Baixa']], valor: 'media', nome: 'prioridade' }));
 const FI8 = {
   tipo: 'filho', secao: 'FI0', titulo: 'Lista de desejos', voltar,
   carregar: () => fin('desejos'),
   corpo(d) {
     const novo = NOVO_DESEJO + acoes(botao('Novo desejo', { principal: true, attrs: ' data-editor="ed-desejo" data-novo' }));
     if (!(d.desejos || []).length) return vazio('A lista está vazia.') + novo;
-    return novo + lista(...d.desejos.map((x) => item(esc(x.titulo), { det: 'prioridade ' + esc(x.prioridade), fim: x.valor != null ? reais(x.valor) : '' })));
+    return novo + lista(...d.desejos.map((x) => item(esc(x.titulo), { det: 'prioridade ' + esc({ media: 'normal' }[x.prioridade] || x.prioridade), fim: x.valor != null ? reais(x.valor) : '' })));
   },
   depois(raiz, d, ctx) {
     comEditor(raiz, '[data-novo]', async (v) => {
       if (!v.titulo.trim()) { marcarErro(raiz, 'dq', 'Escreva o desejo.'); return; }
-      await fin('novo_desejo', { titulo: v.titulo.trim(), valor: v.valor ? valorDe(v.valor) : null, prioridade: v.prioridade });
+      await fin('novo_desejo', { o_que: v.titulo.trim(), preco_estimado: v.valor ? valorDe(v.valor) : null, prioridade: v.prioridade });
       ctx.recarregar();
     });
   },
