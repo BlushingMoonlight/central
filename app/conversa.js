@@ -52,8 +52,11 @@ function mensagensHtml(d) {
   if (d.escrevendo) out += '<p class="escrevendo">escrevendo…</p>';
   if (d.proposta) {
     const p = d.proposta;
+    // A ação do Jean pela conversa (DEC-128): só acontece quando ele confirma. O pedido dela: aceitar, mudar, recusar.
     out += `<div class="proposta"><p><strong>${esc(p.titulo)}</strong> ${esc(p.resumo || '')}</p>`
-      + acoes(botao('Aceitar', { attrs: ' data-aceitar' }), botao('Mudar', { ir: 'CV2', leve: true }), botao('Recusar', { leve: true, attrs: ' data-recusar' }))
+      + (p.de === 'jean'
+        ? acoes(botao('Confirmar', { attrs: ' data-aceitar' }), botao('Cancelar', { leve: true, attrs: ' data-recusar' }))
+        : acoes(botao('Aceitar', { attrs: ' data-aceitar' }), botao('Mudar', { ir: 'CV2', leve: true }), botao('Recusar', { leve: true, attrs: ' data-recusar' })))
       + '</div>';
   }
   return out;
@@ -198,10 +201,11 @@ const CV2 = {
     if (!p) return vazio('Nenhuma proposta esperando.', '', botao('Voltar à conversa', { ir: 'CV' }));
     return `<h1>${esc(p.titulo)}</h1>`
       + lista(item('O quê', { det: esc(p.o_que || p.resumo || '') }), item('Por quê', { det: esc(p.por_que || '') }), item('Depois', { det: esc(p.depois || '') }))
-      + (p.valor != null ? editor('ed-valor', campo('Valor', 'valor', { tipo: 'text', valor: String(p.valor).replace('.', ','), nome: 'valor', extra: ' inputmode="decimal"' })) : '')
+      + (p.de === 'jean' ? acoes(botao('Confirmar', { principal: true, attrs: ' data-aceitar' }), botao('Cancelar', { leve: true, attrs: ' data-recusar' }))
+        : (p.valor != null ? editor('ed-valor', campo('Valor', 'valor', { tipo: 'text', valor: String(p.valor).replace('.', ','), nome: 'valor', extra: ' inputmode="decimal"' })) : '')
       + acoes(botao('Aceitar', { principal: true, attrs: ' data-aceitar' }),
         p.valor != null ? botao('Mudar o valor', { leve: true, attrs: ' data-editor="ed-valor" data-mudar' }) : '',
-        botao('Recusar', { leve: true, attrs: ' data-recusar' }));
+        botao('Recusar', { leve: true, attrs: ' data-recusar' })));
   },
   depois(raiz, d) {
     if (!d.proposta) return;
@@ -212,6 +216,8 @@ const CV2 = {
         const valor = Number(raiz.querySelector('#valor').value.replace(/\./g, '').replace(',', '.'));
         if (!Number.isFinite(valor)) { marcarErro(raiz, 'valor', 'Escreva o valor em reais.'); return; }
         await chamar('proposta', { acao: 'mudar', id, valor });
+        // No pedido de salário ou de adiantamento dela, o valor do Jean já passa a valer (a contraproposta, DEC-128).
+        if (d.proposta.modulo === 'salario') { ir('CV'); return; }
       }
       await chamar('proposta', { acao: 'aceitar', id });
       ir('CV');
