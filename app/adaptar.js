@@ -41,7 +41,7 @@ function painel(tela, d) {
     }
     case 'canone':
       return Object.assign({}, d, { eventos: (d.eventos || []).map((e) => Object.assign({}, e, { hora: quando(e.inicio),
-        estado: e.estado === 'canone' ? 'aceito' : e.estado, motivo: e.motivo_recusa })) });
+        estado: e.estado === 'canone' ? 'aceito' : e.estado === 'substituido' ? 'substituído' : e.estado, motivo: e.motivo_recusa || e.substituido_motivo })) });
     case 'chaves': {
       const p = daPepper(d.pessoas);
       return Object.assign({}, d, { humor: p.humor,
