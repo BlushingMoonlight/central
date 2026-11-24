@@ -44,6 +44,14 @@ const J = [
   ['Árvore: abrir o painel', 2, 'PJ0', [['toque', 'Ajustes'], ['toque', 'Painel do Jean']]],
 ];
 const SO_PROTOTIPO = new Set(['7. Dar um presente', '14. Aprovar o orçamento de viagem', '15. Viagem de presente', 'Árvore: feed dela']);
+// As jornadas do lote 1 da Rodada 5 (DEC-128): só no app (o protótipo é o da rodada 2).
+const SO_APP = [
+  ['19. Mudar o salário', 6, 'PE4', [['toque', 'Pessoas'], ['toque', 'Contrato e salário'], ['toque', 'Mudar o salário'], ['escrever', '#sv', '50000'], ['toque', 'Mudar o salário'], ['toque', 'Mudar o salário']]],
+  ['20. Dar um bônus', 6, 'PE4', [['toque', 'Pessoas'], ['toque', 'Contrato e salário'], ['toque', 'Bônus'], ['escrever', '#bv', '5000'], ['toque', 'Bônus'], ['toque', 'Bônus']]],
+  ['21. Confirmar o aumento pedido na conversa', 1, 'CV', [['estado', 'confirmar'], ['toque', 'Confirmar']]],
+  ['22. Contrapropor o aumento que ela pediu', 4, 'CV', [['estado', 'aumento'], ['toque', 'Mudar'], ['toque', 'Mudar o valor'], ['escrever', '#valor', '50000'], ['toque', 'Aceitar']]],
+  ['23. Aceitar o pedido dela na pessoa', 2, 'PE1', [['toque', 'Pessoas'], ['estado', 'aumento'], ['toque', 'Aceitar']]],
+];
 const { chromium } = createRequire(import.meta.url)('playwright');
 const nav = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const p = await nav.newPage({ viewport: { width: 390, height: 844 } });
@@ -86,7 +94,7 @@ const pronta = async () => {
   await a.waitForFunction(() => document.documentElement.dataset.fase && document.documentElement.dataset.fase !== 'carregando', null, { timeout: 5000 });
 };
 let noApp = 0;
-for (const [nome, esperado, chegada, passos] of J) {
+for (const [nome, esperado, chegada, passos] of [...J, ...SO_APP]) {
   if (SO_PROTOTIPO.has(nome)) continue;
   noApp++;
   await a.goto('about:blank');

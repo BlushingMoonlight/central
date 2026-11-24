@@ -2,7 +2,8 @@
 // Só roda fora do modo demonstração. Cada caso diz de qual workflow vem a resposta. Telas sem caso aqui recebem a
 // resposta como veio (o formato foi escrito igual dos dois lados).
 const porData = (a, b) => String(a.enviada_em).localeCompare(String(b.enviada_em));
-const proposta = (p) => (p ? Object.assign({ titulo: p.titulo || p.o_que || '', resumo: p.resumo || p.por_que || '' }, p) : null);
+const proposta = (p) => (p ? Object.assign({ titulo: p.titulo || p.o_que || '', resumo: p.resumo || p.por_que || '' }, p,
+  { valor: p.valor == null ? null : Number(p.valor) }) : null);
 
 const hora = (iso) => (iso ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso)) : '');
 const quando = (iso) => (iso ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: 'numeric', month: 'numeric' }).format(new Date(iso)) + ', ' + hora(iso) : '');
@@ -178,11 +179,13 @@ export function adaptar(caminho, corpo, d) {
       data: p.devido_em, mes: String(p.mes || '').slice(0, 7) }, p);
     if (d.pessoa) Object.assign(d, { nome: d.pessoa.nome, cargo: d.pessoa.cargo, desde: d.pessoa.desde });
     if (Array.isArray(d.pendente)) d.pendente = d.pendente.map(conta);
+    if (Array.isArray(d.propostas)) d.propostas = d.propostas.map(proposta);
     if (acao === 'contrato') {
       const c = d.contrato || {};
       d.contrato = Object.assign({}, c, { dia: c.dia_pagamento, moeda: c.moeda === 'BRL' ? `Em reais; entra em dólar pelo câmbio do dia ${c.dia_pagamento}` : c.moeda });
       if (!d.vence) d.vence = d.pendente || [];
-      d.holerites = (d.holerites || []).map((h) => Object.assign({ titulo: 'Holerite de ' + String(h.mes_nome || '').replace(/ de \d{4}$/, ''), data: h.emitido_em, valor: h.liquido }, h));
+      d.holerites = (d.holerites || []).map((h) => Object.assign({ titulo: 'Holerite de ' + String(h.mes_nome || '').replace(/ de \d{4}$/, ''), data: h.emitido_em, valor: h.liquido,
+        desconto: Number(h.bruto) - Number(h.liquido) > 0 ? Number(h.bruto) - Number(h.liquido) : 0 }, h));
     }
   }
   if (caminho === 'aparelho' && acao === 'listar' && Array.isArray(d.aparelhos)) {

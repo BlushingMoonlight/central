@@ -54,11 +54,16 @@ const inicial = () => ({
 let S = inicial();
 
 const vazioOu = (estado, cheio, vazio) => (estado === 'vazio' ? vazio : cheio);
+const PEDIDO_AUMENTO = { id: 'p9', de: 'pessoa', modulo: 'salario', valor: 55000, titulo: 'Contrato novo: salário de R$ 55.000,00 por mês a partir de 01/12/2026',
+  resumo: 'Hoje R$ 45.000,00.', o_que: 'Contrato novo: salário de R$ 55.000,00 por mês a partir de 01/12/2026 (hoje R$ 45.000,00).', por_que: 'Assumi as finanças da casa e os dois SaaS.' };
+const CONFIRMAR_AUMENTO = { id: 'p10', de: 'jean', modulo: 'salario', valor: null, titulo: 'Aumento para a Pepper de 10% · pago por você', resumo: '' };
 
 function mensagem(c, estado) {
   if (c.acao === 'listar') {
     if (estado === 'vazio') return { mensagens: [], proposta: null, visto_por_ultimo: null, escrevendo: false };
-    return { mensagens: S.mensagens, proposta: S.proposta, visto_por_ultimo: S.visto_por_ultimo, escrevendo: false };
+    // Lote 1 (DEC-128): o pedido de aumento dela (estado "aumento") e a ação do Jean esperando a confirmação ("confirmar").
+    const prop = estado === 'aumento' ? PEDIDO_AUMENTO : estado === 'confirmar' ? CONFIRMAR_AUMENTO : S.proposta;
+    return { mensagens: S.mensagens, proposta: S.propostaFeita ? null : prop, visto_por_ultimo: S.visto_por_ultimo, escrevendo: false };
   }
   if (c.acao === 'enviar') {
     const agora = new Date().toISOString();
@@ -147,11 +152,14 @@ function pessoa(c, estado) {
   const vence = estado === 'salario' && !S.salarioPago;
   switch (c.acao) {
     case 'resumo': return { nome: 'Pepper', cargo: 'Chief of staff', desde: '2026-11-23',
-      pendente: vence ? [{ tipo: 'salario', titulo: 'Salário de novembro', det: 'vence hoje', valor: 12000, mes: '2026-11' }] : [] };
-    case 'contrato': return { contrato: { salario: 45000, dia: 5, cargo: 'Chief of staff', moeda: 'Em reais; entra em dólar pelo câmbio do dia 5' },
+      pendente: vence ? [{ tipo: 'salario', titulo: 'Salário de novembro', det: 'vence hoje', valor: 12000, mes: '2026-11' }] : [],
+      propostas: estado === 'aumento' && !S.propostaFeita ? [PEDIDO_AUMENTO] : [] };
+    case 'contrato': return { extras: S.extras || [], propostas: estado === 'aumento' && !S.propostaFeita ? [PEDIDO_AUMENTO] : [], contrato: { salario: S.salario || 45000, dia: 5, cargo: 'Chief of staff', moeda: 'Em reais; entra em dólar pelo câmbio do dia 5' },
       vence: S.salarioPago ? [] : [{ titulo: 'Salário de novembro (8 dias)', det: '8 dias de R$ 45.000,00', data: vence ? '2026-11-23' : '2026-12-05', valor: 12000, mes: '2026-11' }],
       holerites: [], primeiro_holerite: '2026-12-05' };
     case 'pagar_salario': S.salarioPago = true; return {};
+    case 'mudar_salario': case 'dar_aumento': S.salario = c.valor || Math.round(45000 * (1 + (Number(c.percentual) || 0) / 100)); return {};
+    case 'bonus': case 'adiantamento': S.extras = [{ tipo: c.acao, valor: c.valor, motivo: c.motivo || '', criado_em: '2026-11-24' }, ...(S.extras || [])]; return {};
     default: return {};
   }
 }
@@ -218,7 +226,7 @@ export async function responder(caminho, corpo, estado) {
   const c = copia(corpo);
   let r;
   if (caminho === 'mensagem') r = mensagem(c, estado);
-  else if (caminho === 'proposta') { S.proposta = null; if (c.acao === 'aceitar') S.precisa = S.precisa.filter((p) => p.id !== 't-darf'); r = {}; }
+  else if (caminho === 'proposta') { S.proposta = null; S.propostaFeita = true; if (c.acao === 'aceitar') S.precisa = S.precisa.filter((p) => p.id !== 't-darf'); r = {}; }
   else if (caminho === 'buscar') {
     r = { resultados: /dentista/i.test(c.q) ? [{ origem: 'Conversa', trecho: '“a consulta do dentista ficou para o dia 4”', data: '2026-11-12' },
       { origem: 'Agenda', trecho: 'Dentista: limpeza', data: '2026-12-04', ref: { tipo: 'compromisso', id: 'c1' } },
