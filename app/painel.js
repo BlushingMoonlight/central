@@ -30,7 +30,7 @@ const PJ1 = {
   corpo: (d) => '<h2>Pepper, hoje, por camada</h2>' + lista(...(d.camadas || []).map((c) => item(esc(c.nome), { det: esc(c.det), fim: dolares(c.usd) })))
     + '<h2>No mês</h2>' + lista(...(d.mes || []).map((m) => item(esc(m.pessoa), { det: `teto ${dolares(m.teto_usd)}, com o motor dentro`, fim: dolares(m.usd) })))
     + ((d.mensagens || []).length ? '<h2>Por mensagem</h2>' + lista(...d.mensagens.map((m) => item(esc(m.hora) + ' · ' + esc(String(m.texto || '').slice(0, 60)),
-      { det: esc(m.camadas), fim: dolares(m.usd) }))) : '')
+      { det: 'cache ' + m.cache + '% · ' + esc(m.camadas), fim: dolares(m.usd) }))) : '')
     + editor('ed-teto', campo('Teto do mês (US$)', 'tm', { valor: String(d.teto_mes_usd), nome: 'mes', extra: ' inputmode="decimal"' })
       + campo('Teto do motor por dia (US$)', 'td', { valor: String(d.teto_motor_dia_usd), nome: 'motor_dia', extra: ' inputmode="decimal"' }))
     + acoes(botao('Mudar um teto', { principal: true, attrs: ' data-editor="ed-teto" data-teto' })),

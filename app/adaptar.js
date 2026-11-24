@@ -28,7 +28,9 @@ function painel(tela, d) {
         camadas: (d.por_camada || []).filter((c) => c.pessoa_id === (p.pessoa_id || 'pepper')).map((c) => ({ nome: CAMADA[c.camada] || c.camada,
           det: `hoje · mês ${Number(c.mes_usd || 0).toFixed(2)} · entrada ${c.tokens_entrada || 0}, cache ${c.tokens_cache || 0}, saída ${c.tokens_saida || 0}, raciocínio ${c.tokens_raciocinio || 0}`, usd: c.hoje_usd })),
         mes: (d.pessoas || []).map((x) => ({ pessoa: x.nome, teto_usd: x.teto_mes_usd, usd: x.mes_usd })),
+        // A parte da entrada que veio do cache, para o Jean ver que o cache pega (DEC-125).
         mensagens: (d.por_mensagem || []).map((m) => ({ hora: quando(m.em), texto: m.texto, usd: m.usd,
+          cache: (() => { const e = (m.camadas || []).reduce((s, c) => s + Number(c.entrada || 0) + Number(c.cache || 0), 0); const k = (m.camadas || []).reduce((s, c) => s + Number(c.cache || 0), 0); return e ? Math.round(k / e * 100) : 0; })(),
           camadas: (m.camadas || []).map((c) => `${CAMADA[c.camada] || c.camada}: entrada ${c.entrada}, cache ${c.cache}, saída ${c.saida}, raciocínio ${c.raciocinio}, US$ ${Number(c.usd).toFixed(4)}`).join(' · ') })) });
     }
     case 'mundo': {
