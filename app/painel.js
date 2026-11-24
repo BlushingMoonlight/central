@@ -85,7 +85,7 @@ const PJ4 = {
     + '<div class="perigoso">' + acoes(botao('Desligar a Pepper', { perigo: true, attrs: ' data-desligar' })) + '</div>',
   depois(raiz, d, ctx) {
     comEditor(raiz, '[data-ficha]', async (v) => { await painel('pessoas', 'mudar_ficha', { pessoa_id: 'pepper', texto: v.texto }); ctx.recarregar(); });
-    comEditor(raiz, '[data-modelos]', async (v) => { await painel('pessoas', 'mudar_modelos', { pessoa_id: 'pepper', texto: v.texto }); ctx.recarregar(); });
+    comEditor(raiz, '[data-modelos]', async (v) => { await painel('pessoas', 'mudar_modelo', { pessoa_id: 'pepper', texto: v.texto }); ctx.recarregar(); });
     comConfirmacao(raiz, '[data-desligar]', async () => { await painel('pessoas', 'desligar', { pessoa_id: 'pepper' }); ctx.recarregar(); });
   },
 };
@@ -100,7 +100,7 @@ const PJ5 = {
     + '<h2>Pelo Jean, agora</h2>' + lista(...(d.sentimentos || []).map((s) => item(esc(s.nome), { fim: `${s.valor} · ${esc(s.tendencia)}` })))
     + (d.humor ? `<p class="pequeno">Humor: ${esc(d.humor)}.</p>` : ''),
   depois(raiz, d, ctx) {
-    comEditor(raiz, '[data-chaves]', async (v) => { await painel('chaves', 'mudar', { chaves: v }); ctx.recarregar(); });
+    comEditor(raiz, '[data-chaves]', async (v) => { await painel('chaves', 'mudar_chave', { chaves: v }); ctx.recarregar(); });
   },
 };
 
@@ -143,9 +143,9 @@ const PJ10 = {
   corpo(d) {
     const l = d.pedidos || [];
     if (!l.length) return vazio('Nenhum pedido de função.');
-    return lista(...l.map((p, i) => item(esc(p.titulo), { det: 'pedido pela Pepper · ' + (p.estado === 'com_jean' ? data(p.data, true) + ' · com o Jean' : 'novo'),
-      acao: botao(p.estado === 'com_jean' ? 'Pronto' : 'Levei ao revisor', { principal: i === 0, leve: i > 0,
-        attrs: ` data-pedido="${esc(p.id)}" data-acao="${p.estado === 'com_jean' ? 'pronto' : 'levei'}"` }) })));
+    return lista(...l.map((p, i) => item(esc(p.titulo), { det: 'pedido pela Pepper · ' + ((p.estado === 'com_jean' || p.estado === 'com_o_jean') ? data(p.data, true) + ' · com o Jean' : 'novo'),
+      acao: botao((p.estado === 'com_jean' || p.estado === 'com_o_jean') ? 'Pronto' : 'Levei ao revisor', { principal: i === 0, leve: i > 0,
+        attrs: ` data-pedido="${esc(p.id)}" data-acao="${(p.estado === 'com_jean' || p.estado === 'com_o_jean') ? 'pronto' : 'levei_ao_revisor'}"` }) })));
   },
   depois(raiz, d, ctx) {
     aoTocar(raiz, '[data-pedido]', async (b) => { await painel('pedidos', b.dataset.acao, { id: b.dataset.pedido }); ctx.recarregar(); });
@@ -169,7 +169,7 @@ const PJ13 = {
   corpo: (d) => lista(...(d.servicos || []).map((s) => item(esc(s.nome), { det: esc(s.estado), cls: s.estado === 'fora' ? 'item--vencido' : '' })))
     + acoes(botao('Fazer backup agora', { principal: true, attrs: ' data-backup' })),
   depois(raiz, d, ctx) {
-    aoTocar(raiz, '[data-backup]', async () => { await painel('sistema', 'backup'); ctx.recarregar(); });
+    aoTocar(raiz, '[data-backup]', async () => { await painel('sistema', 'fazer_backup_agora'); ctx.recarregar(); });
   },
 };
 

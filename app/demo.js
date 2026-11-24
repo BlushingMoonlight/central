@@ -197,7 +197,7 @@ function painelLer(tela, estado) {
 function painel(tela, c, estado) {
   if (c.acao === 'ler') return painelLer(tela, estado);
   if (tela === 'pedidos' && c.acao === 'pronto') S.pedidos = S.pedidos.filter((p) => p.id !== c.id);
-  if (tela === 'pedidos' && c.acao === 'levei') S.pedidos.forEach((p) => { if (p.id === c.id) Object.assign(p, { estado: 'com_jean', data: '2026-11-23' }); });
+  if (tela === 'pedidos' && c.acao === 'levei_ao_revisor') S.pedidos.forEach((p) => { if (p.id === c.id) Object.assign(p, { estado: 'com_jean', data: '2026-11-23' }); });
   return {};
 }
 

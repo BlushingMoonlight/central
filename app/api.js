@@ -1,3 +1,4 @@
+import { adaptar } from './adaptar.js';
 // Central — a ponte com o servidor. Todas as chamadas são POST <api>/<caminho>, JSON, com o token da sessão
 // (menos as de entrada). O endereço vem de config.js (window.CENTRAL.api), nunca escrito aqui.
 // Com ?demo=1, as respostas vêm de app/demo.js (dados inventados), e ?estado=vazio|erro|carregando|salario muda o caso.
@@ -70,5 +71,5 @@ export async function chamar(caminho, corpo = {}) {
   try { dados = await resposta.json(); } catch (e) { /* resposta sem JSON */ }
   if (!dados) throw new ErroApi('', 'rede');
   if (!resposta.ok || !dados.ok) throw new ErroApi(dados.erro || '', 'servidor');
-  return dados;
+  return adaptar(caminho, corpo, dados);
 }
