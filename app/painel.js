@@ -69,13 +69,34 @@ const PJ3 = {
     let n = 0;
     return lista(...l.map((e) => {
       const pode = e.estado === 'aceito';
-      const acao = pode ? editor('ed-c-' + esc(e.id), campo('Como foi', 'c-' + esc(e.id), { valor: e.texto, nome: 'texto' }))
+      // O campo vem vazio; o texto antigo fica só como referência. A correção fica na mesma hora do original (DEC-126).
+      const acao = pode ? editor('ed-c-' + esc(e.id), `<p class="pequeno">Antes: “${esc(e.texto)}”, ${esc(e.hora)}. A correção fica nessa mesma hora.</p>`
+        + campo('Como foi, na verdade', 'c-' + esc(e.id), { nome: 'texto' }))
         + botao('Corrigir', { principal: n++ === 0, leve: n > 1, attrs: ` data-editor="ed-c-${esc(e.id)}" data-corrigir="${esc(e.id)}"` }) : '';
       return item(esc(e.hora) + ' · ' + esc(e.texto), { det: esc(e.origem) + ' · ' + esc(e.estado) + (e.motivo ? ': ' + esc(e.motivo) : ''), acao });
     }));
   },
   depois(raiz, d, ctx) {
-    comEditor(raiz, '[data-corrigir]', async (v, b) => { await painel('canone', 'corrigir', { evento_id: Number(b.dataset.corrigir), texto: v.texto }); ctx.recarregar(); });
+    // 1º toque abre o campo; 2º confere e pede confirmação; 3º manda. Depois de mandar, o botão fica travado até a tela
+    // recarregar: nunca grava duas vezes (DEC-126).
+    comEditor(raiz, '[data-corrigir]', async (v, b) => {
+      const id = 'c-' + b.dataset.corrigir;
+      if (b.dataset.enviado) return;
+      if (!String(v.texto || '').trim()) { marcarErro(raiz, id, 'Escreva como foi.'); return; }
+      marcarErro(raiz, id, '');
+      if (!b.dataset.confirmando) {
+        b.dataset.confirmando = '1';
+        const a = document.createElement('div');
+        a.className = 'aviso aviso--atencao'; a.setAttribute('role', 'alert');
+        a.innerHTML = '<strong>Toque de novo para confirmar.</strong> A correção entra no cânone na mesma hora do original.';
+        b.after(a);
+        return;
+      }
+      b.dataset.enviado = '1'; b.setAttribute('aria-disabled', 'true');
+      try { await painel('canone', 'corrigir', { evento_id: Number(b.dataset.corrigir), texto: String(v.texto).trim() }); }
+      catch (e) { delete b.dataset.enviado; delete b.dataset.confirmando; throw e; }
+      ctx.recarregar();
+    });
   },
 };
 
