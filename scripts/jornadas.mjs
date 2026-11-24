@@ -5,10 +5,16 @@
 // tocando nos botões e links pelo nome, conta os toques como o fluxo conta (cada toque, escrever conta 1, segurar e
 // soltar conta 1, o toque no push conta 1) e confere a conta e a tela de chegada. Sai com erro se alguma não bater.
 //
+// Depois faz as jornadas da entrega 1 de novo no app (index.html em modo de demonstração, ?demo=1), com a mesma conta de
+// toques: no app, "Áudio" e "Segurar para gravar" são segurar e soltar (1 toque, com o microfone falso do Chromium) e
+// "Tirar a foto" abre o seletor de arquivo, que recebe uma imagem de teste (1 toque). As jornadas com telas das entregas
+// 2 a 4 (presentes, despesas de trabalho, feed) só rodam no protótipo.
+//
 // Como rodar: node scripts/jornadas.mjs
 import { join, dirname, resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
+import { servir } from './servidor.mjs';
 
 const raiz = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const url = (p) => pathToFileURL(join(raiz, 'prototipo', p)).href;
@@ -37,8 +43,9 @@ const J = [
   ['Árvore: feed dela', 2, 'PE2', [['toque', 'Pessoas'], ['toque', 'Feed dela']]],
   ['Árvore: abrir o painel', 2, 'PJ0', [['toque', 'Ajustes'], ['toque', 'Painel do Jean']]],
 ];
+const SO_PROTOTIPO = new Set(['7. Dar um presente', '14. Aprovar o orçamento de viagem', '15. Viagem de presente', 'Árvore: feed dela']);
 const { chromium } = createRequire(import.meta.url)('playwright');
-const nav = await chromium.launch();
+const nav = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const p = await nav.newPage({ viewport: { width: 390, height: 844 } });
 const falhas = [];
 for (const [nome, esperado, chegada, passos] of J) {
@@ -65,6 +72,55 @@ for (const [nome, esperado, chegada, passos] of J) {
     if (!ok) falhas.push(nome);
   } catch (e) { console.log(`FALHA ${nome}: ${e.message.split('\n')[0]}`); falhas.push(nome); }
 }
+await p.close();
+
+// As jornadas da entrega 1 no app, em modo de demonstração.
+const servidor = await servir(raiz);
+const contexto = await nav.newContext({ viewport: { width: 390, height: 844 }, permissions: ['microphone'] });
+const a = await contexto.newPage();
+// Uma foto de teste (PNG de 1 x 1) para o seletor de arquivo da câmera.
+const FOTO = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+a.on('filechooser', (fc) => fc.setFiles({ name: 'nota.png', mimeType: 'image/png', buffer: FOTO }));
+const pronta = async () => {
+  await a.waitForTimeout(250);
+  await a.waitForFunction(() => document.documentElement.dataset.fase && document.documentElement.dataset.fase !== 'carregando', null, { timeout: 5000 });
+};
+let noApp = 0;
+for (const [nome, esperado, chegada, passos] of J) {
+  if (SO_PROTOTIPO.has(nome)) continue;
+  noApp++;
+  await a.goto('about:blank');
+  await a.goto(servidor.url + '/index.html?demo=1#CV');
+  await pronta();
+  let toques = 0;
+  try {
+    for (const [tipo, x, y] of passos) {
+      if (tipo === 'push') { await a.evaluate(() => { location.hash = '#CV'; }); await pronta(); toques++; }
+      else if (tipo === 'estado') { const u = new URL(a.url()); u.searchParams.set('estado', x); await a.goto('about:blank'); await a.goto(u.href); await pronta(); }
+      else if (tipo === 'escrever') { await a.locator(x).fill(y); toques++; }
+      else {
+        const exato = new RegExp('^\\s*' + x + '\\s*$');
+        const botoes = a.locator('a:visible, button:visible');
+        let alvo = botoes.filter({ hasText: exato }).first();
+        if (!(await alvo.count())) alvo = botoes.filter({ has: a.locator('strong', { hasText: exato }) }).first();
+        if (x === 'Áudio' || x === 'Segurar para gravar') {
+          await alvo.hover({ timeout: 3000 });
+          await a.mouse.down();
+          await a.waitForTimeout(700);
+          await a.mouse.up();
+          await a.waitForTimeout(500);
+        } else await alvo.click({ timeout: 3000 });
+        await pronta();
+        toques++;
+      }
+    }
+    const tela = await a.getAttribute('html', 'data-tela');
+    const ok = toques === esperado && tela === chegada;
+    console.log(`${ok ? 'ok   ' : 'FALHA'} app · ${nome}: ${toques} toques (fluxo: ${esperado}), chegou em ${tela}`);
+    if (!ok) falhas.push('app · ' + nome);
+  } catch (e) { console.log(`FALHA app · ${nome}: ${e.message.split('\n')[0]}`); falhas.push('app · ' + nome); }
+}
+servidor.fechar();
 await nav.close();
 if (falhas.length) { console.error(`${falhas.length} jornada(s) não bateram.`); process.exit(1); }
-console.log(`Jornadas: as ${J.length} bateram com a conta do fluxo.`);
+console.log(`Jornadas: as ${J.length} bateram no protótipo e as ${noApp} da entrega 1 bateram no app, com a conta do fluxo.`);
