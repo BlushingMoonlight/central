@@ -35,7 +35,7 @@ function painel(tela, d) {
       const p = daPepper(d.pessoas); const r = p.ritmo || {};
       return Object.assign({}, d, { estado: p.pausa ? 'pausado' : 'rodando', pausado: !!p.pausa, ritmo_min: r.min_minutos, ritmo_max: r.max_minutos,
         teto_motor_dia_usd: p.teto_motor_dia_usd, motor_hoje_usd: p.motor_hoje_usd,
-        ciclos: (p.ciclos || []).map((c) => ({ hora: hora(c.inicio), eventos: c.eventos || 0, usd: c.custo_usd || 0 })) });
+        ciclos: (p.ciclos || []).map((c) => ({ hora: hora(c.inicio) + (c.erro ? ' · ' + c.erro : ''), eventos: c.eventos || 0, usd: c.custo_usd || 0 })) });
     }
     case 'canone':
       return Object.assign({}, d, { eventos: (d.eventos || []).map((e) => Object.assign({}, e, { hora: quando(e.inicio),
@@ -73,8 +73,14 @@ function painel(tela, d) {
     case 'sistema': {
       const b = (d.backups || [])[0]; const rel = daPepper(d.relogio_da_vida);
       const testes = daPepper(d.testes).resultados || [];
+      // O relógio está fora quando parou (o último ciclo tem mais de 6 horas; o ritmo vai até 4). Um ciclo só de código
+      // não é "fora": o motivo aparece em Mundo (DEC-124). As fontes vêm da conferência do 07 ("saude").
+      const parado = !rel.ultimo_ciclo || Date.now() - Date.parse(rel.ultimo_ciclo) > 6 * 3600000;
+      const saude = ((d.estado || []).find((e) => e.chave === 'saude') || {}).valor || {};
+      const NOMES = { openai: 'OpenAI', yahoo: 'Cotações (Yahoo Finance)', rss: 'Notícias (RSS)', open_meteo: 'Clima (Open-Meteo)', awesomeapi: 'Câmbio (AwesomeAPI)' };
       return Object.assign({}, d, { servicos: [
-        { nome: 'Relógio da vida', estado: rel.ultimo_ciclo ? (rel.erro ? 'fora' : 'último ciclo ' + quando(rel.ultimo_ciclo)) : 'ainda não rodou' },
+        { nome: 'Relógio da vida', estado: !rel.ultimo_ciclo ? 'ainda não rodou' : parado ? 'fora' : 'último ciclo ' + quando(rel.ultimo_ciclo) + (rel.erro ? ' · só no código' : '') },
+        ...Object.entries(saude.fontes || {}).map(([k, x]) => ({ nome: NOMES[k] || k, estado: x.ok ? 'no ar' : 'fora' + (x.erro ? ' (' + x.erro + ')' : '') })),
         { nome: 'Backup', estado: b ? (b.ok ? 'feito ' + quando(b.feito_em) : 'fora') : 'nenhum ainda' }],
         testes: testes.map((t) => ({ nome: t.teste, passou: t.passou, det: (t.passou ? 'passou' : 'não passou') + (t.motivo ? ': ' + t.motivo : '') + ' · ' + quando(t.rodada_em) })) });
     }
