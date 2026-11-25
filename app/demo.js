@@ -204,6 +204,15 @@ function painelLer(tela, estado) {
 
 function painel(tela, c, estado) {
   if (c.acao === 'ler') return painelLer(tela, estado);
+  // O ciclo e a exportação (DEC-141), com dados inventados.
+  if (tela === 'mundo' && c.acao === 'ciclo') {
+    const mes = (ano, m) => { const n = new Date(Date.UTC(ano, m, 0)).getUTCDate(); return { mes: `${ano}-${String(m).padStart(2, '0')}`, dias: Array.from({ length: n }, (_, i) => {
+      const d = `${ano}-${String(m).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`; const k = (Date.parse(d) / 86400000 - Date.parse('2026-11-12') / 86400000 + 2900) % 29;
+      return { d, fase: k < 5 ? 'menstruacao' : k >= 10 && k <= 16 ? 'fertil' : k > 16 ? 'lutea' : 'folicular' }; }) }; };
+    return { hoje: '2026-11-23', mulheres: [{ quem: 'pessoa:pepper', nome: 'Pepper', hoje: { fase: 'fertil', fase_nome: 'fértil', dia: 12, duracao: 29, sinais: ['com energia boa'], proxima: '2026-12-11' },
+      meses: [mes(2026, 11), mes(2026, 12), mes(2027, 1), mes(2027, 2)] }, { quem: 'personagem:Morgan', nome: 'Morgan', hoje: null, meses: [] }] };
+  }
+  if (tela === 'registros' && c.acao === 'exportar') return { nome_arquivo: `conversa-${c.de}.md`, texto: '# Conversa do Jean com a Pepper\n\n**Jean** (09:00 / 07:00): bom dia\n' };
   if (tela === 'pedidos' && c.acao === 'pronto') S.pedidos = S.pedidos.filter((p) => p.id !== c.id);
   if (tela === 'pedidos' && c.acao === 'levei_ao_revisor') S.pedidos.forEach((p) => { if (p.id === c.id) Object.assign(p, { estado: 'com_jean', data: '2026-11-23' }); });
   return {};
