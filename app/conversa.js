@@ -49,7 +49,8 @@ function mensagensHtml(d) {
     out += `<div class="msg msg--ele msg--fim"><p>${esc(p.corpo.texto || 'áudio')}</p><span class="hora">Não enviada · sem conexão</span></div>`;
   }
   if (d.pendentes.length) out += '<p class="sistema">Sem conexão. A mensagem sai quando a internet voltar. <a href="#CV" data-tentar-agora>Tentar agora</a></p>';
-  if (d.escrevendo) out += '<p class="escrevendo">escrevendo…</p>';
+  // "Digitando…" só enquanto ela digita cada balão (DEC-142): some entre um e outro.
+  if (d.escrevendo) out += '<p class="escrevendo">digitando…</p>';
   if (d.proposta) {
     const p = d.proposta;
     // A ação do Jean pela conversa (DEC-128): só acontece quando ele confirma. O pedido dela: aceitar, mudar, recusar.

@@ -27,7 +27,9 @@ const PJ0 = {
 const PJ1 = {
   ...P, titulo: 'Custos',
   carregar: () => painel('custos'),
-  corpo: (d) => '<h2>Pepper, hoje, por camada</h2>' + lista(...(d.camadas || []).map((c) => item(esc(c.nome), { det: esc(c.det), fim: dolares(c.usd) })))
+  corpo: (d) => numeros(['Cache na resposta', d.cache_resposta_pct != null ? String(d.cache_resposta_pct).replace('.', ',') + '%' : '—', 'últimos 7 dias · meta acima de 70%'],
+    ['No Flex', dolares(d.flex_mes_usd || 0), 'no mês, pela metade do preço'])
+    + '<h2>Pepper, hoje, por camada</h2>' + lista(...(d.camadas || []).map((c) => item(esc(c.nome), { det: esc(c.det), fim: dolares(c.usd) })))
     + '<h2>No mês</h2>' + lista(...(d.mes || []).map((m) => item(esc(m.pessoa), { det: `teto ${dolares(m.teto_usd)}, com o motor dentro`, fim: dolares(m.usd) })))
     + ((d.mensagens || []).length ? '<h2>Por mensagem</h2>' + lista(...d.mensagens.map((m) => item(esc(m.hora) + ' · ' + esc(String(m.texto || '').slice(0, 60)),
       { det: 'cache ' + m.cache + '% · ' + esc(m.camadas), fim: dolares(m.usd) }))) : '')
@@ -61,9 +63,22 @@ function ciclos(c) {
       : '<p class="texto-2">O ciclo ainda não começou.</p>')).join('');
 }
 
+// A variedade da semana (DEC-142): os assuntos diferentes da vida dela, as frases barradas por repetição e os arcos vivos.
+function variedade(v) {
+  if (!v) return '';
+  return '<h2>Variedade da semana</h2>' + numeros(['Assuntos', String(v.assuntos), 'na semana anterior: ' + v.assuntos_antes], ['Repetidas', String(v.repetidas), 'barradas pela crítica'])
+    + lista(item('Arcos vivos', { det: `${v.arcos} ${v.arcos === 1 ? 'coisa' : 'coisas'} da vida dela que duram semanas` }))
+    + (v.novidade ? '<div class="aviso aviso--atencao">A variedade caiu: o motor vai puxar uma novidade.</div>' : '');
+}
+
 const PJ2 = {
   ...P, titulo: 'Mundo',
-  carregar: async () => { const d = await painel('mundo'); try { d.ciclo = await painel('mundo', 'ciclo', { pessoa_id: 'pepper' }); } catch (e) { d.ciclo = null; } return d; },
+  carregar: async () => {
+    const d = await painel('mundo');
+    try { d.ciclo = await painel('mundo', 'ciclo', { pessoa_id: 'pepper' }); } catch (e) { d.ciclo = null; }
+    try { d.variedade = await painel('mundo', 'variedade', { pessoa_id: 'pepper' }); } catch (e) { d.variedade = null; }
+    return d;
+  },
   corpo: (d) => lista(item('Estado', { det: esc(d.estado) }), item('Ritmo', { det: `de ${d.ritmo_min} minutos a ${d.ritmo_max / 60} horas entre ciclos` }),
     item('Teto do motor', { det: `${dolares(d.teto_motor_dia_usd)} por dia · hoje ${dolares(d.motor_hoje_usd)}` }))
     + '<h2>Últimos ciclos</h2>' + ((d.ciclos || []).length ? lista(...d.ciclos.map((c) => item(esc(c.hora), { det: `${c.eventos} eventos`, fim: dolares(c.usd) }))) : '<p class="texto-2">Nenhum ciclo ainda.</p>')
@@ -71,6 +86,7 @@ const PJ2 = {
       + campo('Máximo entre ciclos (minutos)', 'rmax', { valor: String(d.ritmo_max), nome: 'max', extra: ' inputmode="numeric"' }))
     + acoes(botao(d.pausado ? 'Retomar o mundo' : 'Pausar o mundo', { principal: true, attrs: ' data-pausar' }),
       botao('Mudar o ritmo', { leve: true, attrs: ' data-editor="ed-ritmo" data-ritmo' }))
+    + variedade(d.variedade)
     + ciclos(d.ciclo),
   depois(raiz, d, ctx) {
     aoTocar(raiz, '[data-pausar]', async () => { await painel('mundo', d.pausado ? 'retomar' : 'pausar', { pessoa_id: 'pepper', motivo: 'pelo painel' }); ctx.recarregar(); });
@@ -222,9 +238,18 @@ const PJ10 = {
   },
 };
 
+const ITENS_NOTA = [['memoria', 'Memória'], ['consistencia', 'Consistência'], ['limite_do_conhecimento', 'Limite do conhecimento'], ['emocao', 'Emoção'], ['iniciativa', 'Iniciativa'], ['discordancia', 'Discordância real']];
+const virgula = (n) => String(n).replace('.', ',');
+function notaHtml(r) {
+  return numeros(['Nota de humanidade', virgula(r.media), 'de 1 a 10, média de 6 itens']) + lista(...ITENS_NOTA.map(([k, nome]) => item(nome, { fim: virgula(r.notas[k] != null ? r.notas[k] : '—') })))
+    + (r.pior_trecho ? '<h3>O trecho menos humano</h3><p class="texto-2">' + esc(r.pior_trecho) + '</p>' : '');
+}
+const periodo = (v) => { const hoje = hojeIso(); const menos = (n) => new Date(Date.parse(hoje + 'T12:00:00Z') - n * 86400000).toISOString().slice(0, 10);
+  return v.periodo === 'intervalo' ? [v.de, v.ate || v.de] : [menos(Number(v.periodo) - 1), hoje]; };
+
 const PJ12 = {
   ...P, titulo: 'Registros e falhas',
-  carregar: () => painel('registros'),
+  carregar: async () => { const d = await painel('registros'); try { d.notas = (await painel('registros', 'notas', { pessoa_id: 'pepper' })).historico || []; } catch (e) { d.notas = []; } return d; },
   corpo: (d) => ((d.falhas || []).length
     ? '<h2>Falhas abertas</h2>' + lista(...d.falhas.map((f) => item(esc(f.texto), { det: esc(f.quando), cls: 'item--vencido' })))
     : '<div class="aviso aviso--certo">Nenhuma falha aberta.</div>')
@@ -234,8 +259,19 @@ const PJ12 = {
     + '<h2>Exportar conversa</h2><p class="texto-2">Um arquivo de texto para levar ao revisor: as mensagens, as linhas e o custo de cada resposta.</p>'
     + editor('ed-exportar', campo('Período', 'pe', { opcoes: [['1', 'Hoje'], ['3', '3 dias'], ['7', '7 dias'], ['intervalo', 'Um intervalo']], valor: '1', nome: 'periodo' })
       + campo('De', 'de', { tipo: 'date', nome: 'de' }) + campo('Até', 'ate', { tipo: 'date', nome: 'ate' }))
-    + acoes(botao('Exportar conversa', { principal: true, attrs: ' data-editor="ed-exportar" data-exportar' })) + '<div data-arquivo></div>',
+    + acoes(botao('Exportar conversa', { principal: true, attrs: ' data-editor="ed-exportar" data-exportar' })) + '<div data-arquivo></div>'
+    + '<h2>Nota de humanidade</h2><p class="texto-2">Um juiz lê a conversa do período, 3 vezes, e dá de 1 a 10 em 6 itens. Para comparar antes e depois de cada rodada.</p>'
+    + editor('ed-avaliar', campo('Período', 'pa', { opcoes: [['1', 'Hoje'], ['3', '3 dias'], ['7', '7 dias'], ['intervalo', 'Um intervalo']], valor: '1', nome: 'periodo' })
+      + campo('De', 'ade', { tipo: 'date', nome: 'de' }) + campo('Até', 'aate', { tipo: 'date', nome: 'ate' }) + campo('Etiqueta (antes, depois, rodada 8)', 'aro', { nome: 'rodada' }))
+    + acoes(botao('Avaliar conversa', { leve: true, attrs: ' data-editor="ed-avaliar" data-avaliar' })) + '<div data-nota></div>'
+    + ((d.notas || []).length ? '<h3>As últimas</h3>' + lista(...d.notas.map((n) => item(virgula(n.media) + (n.rodada ? ' · ' + esc(n.rodada) : ''), { det: data(n.de, true) + (n.ate !== n.de ? ' a ' + data(n.ate, true) : '') }))) : ''),
   depois(raiz) {
+    comEditor(raiz, '[data-avaliar]', async (v) => {
+      const [de, ate] = periodo(v); if (!de) { marcarErro(raiz, 'ade', 'Escolha o primeiro dia.'); return; }
+      const lugar = raiz.querySelector('[data-nota]'); lugar.innerHTML = '<p class="texto-2">O juiz está lendo. Leva um minuto.</p>';
+      try { lugar.innerHTML = notaHtml(await painel('registros', 'avaliar', { pessoa_id: 'pepper', de, ate, rodada: v.rodada || '' })); }
+      catch (e) { lugar.innerHTML = '<div class="aviso aviso--erro" role="alert">' + esc(e.message || 'Não deu certo. Tente de novo.') + '</div>'; }
+    });
     // O arquivo vai para o compartilhar do iPhone (salvar ou mandar ao revisor); sem ele, baixa.
     comEditor(raiz, '[data-exportar]', async (v) => {
       const hoje = hojeIso(); const menos = (n) => new Date(Date.parse(hoje + 'T12:00:00Z') - n * 86400000).toISOString().slice(0, 10);
