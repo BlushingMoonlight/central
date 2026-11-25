@@ -57,6 +57,8 @@ const JG = {
   corpo: () => '<div class="jogo__mundo" data-mundo></div>'
     + '<button class="jogo__chip" data-chip aria-label="Hora e humor"><span data-hora></span><span class="jogo__humor" data-humor></span></button>'
     + '<button class="jogo__celular" data-celular aria-label="Celular"><span class="jogo__celular-tela"></span></button>'
+    + '<div class="jogo__zoom"><button class="jogo__mini" data-zoom="1" aria-label="Aproximar">+</button><button class="jogo__mini" data-zoom="-1" aria-label="Afastar">−</button>'
+    + '<button class="jogo__mini" data-centro aria-label="Centralizar">◎</button></div>'
     + '<div class="jogo__folha" data-folha hidden></div>',
   async depois(raiz, d, ctx) {
     parar(); mapaAtual = d.mapa_id || 'casa-pepper';
@@ -126,6 +128,9 @@ const JG = {
       construir: async (id) => { await verMapa(id); construtor.abrir(); },
       tirar: (id) => { const g = (((ultimo || {}).casa || {}).guardados || []).find((x) => x.id === id); if (!g) return; motor.mover(g, true); ui.movendo(true, () => motor.girar(), () => { motor.cancelarMover(); ui.movendo(false); }); menus.aviso('Toque onde quer pôr.'); } });
     raiz.querySelector('[data-chip]').addEventListener('click', () => celular.abrir('status'));
+    // A câmera sem pinça (rodada 9, adendo 3): o zoom em níveis inteiros e o "centralizar".
+    raiz.querySelectorAll('[data-zoom]').forEach((b) => b.addEventListener('click', () => motor.zoom(Number(b.dataset.zoom))));
+    raiz.querySelector('[data-centro]').addEventListener('click', () => motor.centralizar());
     raiz.querySelector('[data-celular]').addEventListener('click', (e) => { e.currentTarget.classList.remove('jogo__celular--novo'); celular.abrir(); });
     // a primeira vez: a apresentação curta, que dá para pular (no aparelho e no servidor)
     if (!ler(CHAVE_INTRO, false) && !cfg.apresentacao) apresentacao();

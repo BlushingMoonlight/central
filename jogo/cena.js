@@ -255,24 +255,39 @@ export function criarJogo(Phaser, pai, op) {
     }
     montarCamera() {
       const cam = this.cameras.main; this.desvio = { x: 0, y: 0 }; this.arrastando = null;
+      // A câmera sem depender da pinça (rodada 9, adendo 3): botões + e −, toque duplo, roda do mouse, botão do meio,
+      // um dedo arrastando (no construtor, menos com uma ferramenta de desenhar), "centralizar" e "ver tudo". A pinça segue.
+      this.input.on('wheel', (p, o, dx, dy) => { if (this.time.now - (this.rodaEm || 0) < 160) return; this.rodaEm = this.time.now; this.mudarZoom(dy < 0 ? 1 : -1); });
       this.input.on('pointerdown', (p) => {
-        this.fixo = null; this.arrastando = { x: p.x, y: p.y, dx: this.desvio.x, dy: this.desvio.y, t: this.time.now, lx: this.livre ? this.livre.x : 0, ly: this.livre ? this.livre.y : 0 };
+        const dois = this.input.pointer1.isDown && this.input.pointer2.isDown;
+        if (dois) { clearTimeout(this.segura); if (this.joy) { this.joy = null; op.aoJoy && op.aoJoy(false); } this.arrastando = null; this.pinca = this.distPinca(); return; }
+        if (p.middleButtonDown && p.middleButtonDown()) { this.arrastando = { x: p.x, y: p.y, dx: this.desvio.x, dy: this.desvio.y, t: this.time.now, meio: true, ...this.pontoLivre() }; return; }
+        this.fixo = null; this.arrastando = { x: p.x, y: p.y, dx: this.desvio.x, dy: this.desvio.y, t: this.time.now, ...this.pontoLivre() };
         if (this.construindo) { const [x, y] = this.chaoNaTela(p); op.aoConstrutor && op.aoConstrutor('inicio', x, y); return; }
         // segurar o dedo no vazio, seguindo o Jean: o controle flutuante embaixo do polegar (aparelhos.md)
         clearTimeout(this.segura); if (this.podeAndar()) this.segura = setTimeout(() => { const a = this.arrastando; if (!a || this.joy) return; this.joy = { sx: a.x, sy: a.y, dx: 0, dy: 0 }; this.arrastando = null; op.aoJoy && op.aoJoy(true, a.x, a.y, 0, 0); }, 280);
       });
       this.input.on('pointermove', (p) => {
+        this.ponteiro = p;
+        if (this.pinca) { if (!(this.input.pointer1.isDown && this.input.pointer2.isDown)) { this.pinca = null; return; }
+          const d = this.distPinca(); if (d > this.pinca * 1.3) { this.mudarZoom(1); this.pinca = d; } else if (d < this.pinca / 1.3) { this.mudarZoom(-1); this.pinca = d; } return; }
         if (this.movendo) this.moverFantasma(p);
-        if (this.construindo && p.isDown) { const [x, y] = this.chaoNaTela(p); op.aoConstrutor && op.aoConstrutor('arrasto', x, y); if (this.construindo !== 'mao') return; }
+        const meio = this.arrastando && this.arrastando.meio;
+        if (this.construindo && p.isDown && !meio) { const [x, y] = this.chaoNaTela(p); op.aoConstrutor && op.aoConstrutor('arrasto', x, y); if (this.construindo === 'desenhar') return; }
         if (this.joy) { const dx = p.x - this.joy.sx, dy = p.y - this.joy.sy, d = Math.hypot(dx, dy), r = 44; this.joy.dx = d > r ? dx / d * r : dx; this.joy.dy = d > r ? dy / d * r : dy; op.aoJoy && op.aoJoy(true, this.joy.sx, this.joy.sy, this.joy.dx, this.joy.dy); return; }
         const a = this.arrastando; if (!a || !p.isDown || this.movendo) return; if (Math.hypot(p.x - a.x, p.y - a.y) > 10) clearTimeout(this.segura); const z = cam.zoom;
-        if (this.camera === 'livre' && this.livre) { this.livre.x = a.lx - (p.x - a.x) / z; this.livre.y = a.ly - (p.y - a.y) / z; const L = this.limites; this.livre.x = Math.max(L.x0, Math.min(L.x1, this.livre.x)); this.livre.y = Math.max(L.y0, Math.min(L.y1, this.livre.y)); return; }
+        if (this.cameraSolta() && this.livre) { this.livre.x = a.lx - (p.x - a.x) / z; this.livre.y = a.ly - (p.y - a.y) / z; const L = this.limites; this.livre.x = Math.max(L.x0, Math.min(L.x1, this.livre.x)); this.livre.y = Math.max(L.y0, Math.min(L.y1, this.livre.y)); return; }
         this.desvio.x = Math.max(-420, Math.min(420, a.dx - (p.x - a.x) / z)); this.desvio.y = Math.max(-260, Math.min(260, a.dy - (p.y - a.y) / z)); });
       this.input.on('pointerup', (p) => {
         clearTimeout(this.segura);
+        if (this.pinca) { if (!(this.input.pointer1.isDown && this.input.pointer2.isDown)) this.pinca = null; this.arrastando = null; return; }
+        if (this.arrastando && this.arrastando.meio) { this.arrastando = null; this.soltouEm = this.time.now; return; }
         if (this.joy) { this.joy = null; op.aoJoy && op.aoJoy(false); this.jeanParou(); this.arrastando = null; return; }
-        if (this.construindo) { const [x, y] = this.chaoNaTela(p); op.aoConstrutor && op.aoConstrutor('fim', x, y); this.arrastando = null; this.soltouEm = this.time.now; return; }
-        const a = this.arrastando; if (a && Math.hypot(p.x - a.x, p.y - a.y) < 10 && this.time.now - a.t < 600) this.tocou(p);
+        const a = this.arrastando; const toque = a && Math.hypot(p.x - a.x, p.y - a.y) < 10 && this.time.now - a.t < 600;
+        if (this.construindo) { const [x, y] = this.chaoNaTela(p); op.aoConstrutor && op.aoConstrutor(toque || this.construindo === 'desenhar' ? 'fim' : 'arrastou', x, y); this.arrastando = null; this.soltouEm = this.time.now; return; }
+        // O toque duplo (no mesmo lugar, em até 300 ms): aproxima um nível no ponto; de novo, volta.
+        const u = this.ultimoToque; if (toque && u && this.time.now - u.t < 300 && Math.hypot(p.x - u.x, p.y - u.y) < 30) { this.ultimoToque = null; this.zoomDuplo(p); }
+        else if (toque) { this.ultimoToque = { t: this.time.now, x: p.x, y: p.y }; this.tocou(p); }
         this.arrastando = null; this.soltouEm = this.time.now; });
       this.ajustarEscala(); this.scale.on('resize', () => this.ajustarEscala());
       const [x, y] = iso(this.mapa.pontos.porta.x, this.mapa.pontos.porta.y); cam.centerOn(x, y);
@@ -289,6 +304,26 @@ export function criarJogo(Phaser, pai, op) {
       this.events.once('destroy', () => { window.removeEventListener('keydown', this.aoTecla); window.removeEventListener('keyup', this.aoSoltarTecla); });
     }
     podeAndar() { return this.camera === 'jean' && this.jean.visivel && !this.jean.preso && !this.construindo && !this.movendo; }
+    cameraSolta() { return this.camera === 'livre' || !!this.construindo; }
+    pontoLivre() { const c = this.cameras.main; if (this.cameraSolta() && !this.livre) this.livre = { x: c.midPoint.x, y: c.midPoint.y }; return { lx: this.livre ? this.livre.x : 0, ly: this.livre ? this.livre.y : 0 }; }
+    distPinca() { const a = this.input.pointer1, b = this.input.pointer2; return Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)); }
+    // Os níveis de zoom: 4, sempre inteiros (a arte de pixel nítida), de um abaixo a dois acima do automático.
+    mudarZoom(d) { const a = this.auto || 3; this.escalaManual = Math.max(Math.max(1, a - 1), Math.min(a + 2, (this.escala || a) + d)); this.ajustarEscala(); }
+    zoomDuplo(p) {
+      const w = this.cameras.main.getWorldPoint(p.x, p.y);
+      if ((this.escala || 0) > (this.auto || 3)) { this.escalaManual = null; this.ajustarEscala(); return; }
+      this.mudarZoom(1); this.levarA(w.x, w.y);
+    }
+    // Leva o centro da câmera a um ponto do mundo: na câmera solta, o ponto; seguindo alguém, o desvio (que volta sozinho).
+    levarA(x, y) { const c = this.cameras.main; if (this.cameraSolta()) { this.livre = this.preso({ x, y }); return; }
+      this.desvio.x = Math.max(-420, Math.min(420, this.desvio.x + x - c.midPoint.x)); this.desvio.y = Math.max(-260, Math.min(260, this.desvio.y + y - c.midPoint.y)); this.soltouEm = this.time.now; }
+    preso(pt) { const L = this.limites; return L ? { x: Math.max(L.x0, Math.min(L.x1, pt.x)), y: Math.max(L.y0, Math.min(L.y1, pt.y)) } : pt; }
+    centralizar() { this.fixo = null; this.desvio.x = 0; this.desvio.y = 0; if (!this.cameraSolta()) { this.livre = null; return; }
+      const j = this.jean; const quem = this.camera === 'jean' && j.visivel ? iso(j.x, j.y) : iso(this.pepper.x, this.pepper.y); this.livre = this.preso({ x: quem[0], y: quem[1] - 16 }); }
+    // "Ver tudo": a casa inteira na tela, no maior nível inteiro que cabe.
+    verTudo() { const L = this.limites; if (!L) return; const c = this.cameras.main;
+      this.escalaManual = Math.max(1, Math.floor(Math.min(this.scale.width / (L.x1 - L.x0), this.scale.height / (L.y1 - L.y0)))); this.ajustarEscala();
+      if (!this.cameraSolta()) this.camera = 'livre'; this.livre = { x: (L.x0 + L.x1) / 2, y: (L.y0 + L.y1) / 2 }; this.fixo = null; c.centerOn(this.livre.x, this.livre.y); }
     chaoNaTela(p) { const w = this.cameras.main.getWorldPoint(p.x, p.y); const x = (w.y / BY + w.x / BX) / 2, y = (w.y / BY - w.x / BX) / 2; return [x, y]; }
     // O toque: o item de cima (pelo pixel), ou o gato; no modo mover, onde soltar (DEC-175); no chão, o Jean anda (DEC-176).
     tocou(p) {
@@ -342,7 +377,7 @@ export function criarJogo(Phaser, pai, op) {
     ajustarEscala(forcar) {
       const w = this.scale.width, h = this.scale.height, menor = Math.min(w, h);
       const auto = menor < 600 ? (menor < 330 ? 2 : 3) : menor >= 1100 ? 5 : 4;
-      this.escala = forcar || this.escalaManual || auto; this.cameras.main.setZoom(this.escala).setRoundPixels(true);
+      this.auto = auto; this.escala = forcar || this.escalaManual || auto; this.cameras.main.setZoom(this.escala).setRoundPixels(true);
     }
     // ---- o construtor (DEC-176): a grade e as marcas (o cômodo que se arrasta, a parede, o item escolhido)
     marcar(formas = []) {
@@ -447,8 +482,13 @@ export function criarJogo(Phaser, pai, op) {
       const j = this.jean; const [jx, jy] = iso(j.x, j.y);
       const fixo = this.fixo === 'gato' ? this.spGato : this.fixo && this.sprites[this.fixo];
       let foco = fixo ? [fixo.x, fixo.y - 16] : this.camera === 'jean' && j.visivel ? [jx, jy - 16] : dela && p.visivel ? [wx, wy - 16] : iso(this.mapa.pontos.fora.x, this.mapa.pontos.fora.y);
-      if (this.camera === 'livre' && !fixo) { if (!this.livre) this.livre = { x: cam.midPoint.x, y: cam.midPoint.y }; foco = [this.livre.x, this.livre.y]; } else this.livre = null;
-      const dv = this.camera === 'livre' ? { x: 0, y: 0 } : this.desvio;
+      if (this.cameraSolta() && !fixo) { if (!this.livre) this.livre = { x: cam.midPoint.x, y: cam.midPoint.y };
+        // Desenhando ou movendo um item perto da borda da tela, a câmera vai junto.
+        const q = this.ponteiro; if (q && q.isDown && (this.construindo === 'desenhar' || this.movendo) && !this.pinca) { const m = 40, v = 6 / cam.zoom;
+          const bx = q.x < m ? -v : q.x > this.scale.width - m ? v : 0, by = q.y < m ? -v : q.y > this.scale.height - m ? v : 0;
+          if (bx || by) this.livre = this.preso({ x: this.livre.x + bx, y: this.livre.y + by }); }
+        foco = [this.livre.x, this.livre.y]; } else this.livre = null;
+      const dv = this.cameraSolta() ? { x: 0, y: 0 } : this.desvio;
       cam.scrollX += ((foco[0] + dv.x - cam.width / 2) - cam.scrollX) * 0.08;
       cam.scrollY += ((foco[1] + dv.y - cam.height / 2) - cam.scrollY) * 0.08;
       if (aoDiagnostico) aoDiagnostico({ fps: this.game.loop.actualFps, luzes: this.diag.luzes, total: this.diag.total, escala: this.escala, w: Math.round(this.scale.width / this.escala), h: Math.round(this.scale.height / this.escala),
@@ -519,7 +559,9 @@ export function criarJogo(Phaser, pai, op) {
     girar: () => cena && cena.girarMover(),
     cancelarMover: () => cena && cena.cancelarMover(),
     estado: () => (cena ? cena.estado : null),
-    zoom: (d) => { if (!cena) return; cena.escalaManual = Math.max(1, Math.min(5, (cena.escala || 2) + d)); cena.ajustarEscala(); },
+    zoom: (d) => cena && cena.mudarZoom(d),
+    centralizar: () => cena && cena.centralizar(),
+    verTudo: () => cena && cena.verTudo(),
     // DEC-176: a câmera, o Jean, os andares e o construtor
     camera: (modo) => { if (cena) { cena.camera = modo; cena.fixo = null; cena.livre = null; } },
     modoCamera: () => (cena ? cena.camera : 'pepper'),
@@ -529,7 +571,7 @@ export function criarJogo(Phaser, pai, op) {
     remontar: (mapa, andar) => cena && cena.remontar(mapa, andar),
     andarVisto: () => (cena ? cena.andar : 0),
     mapa: () => (cena ? cena.mapaTodo : op.mapa),
-    construir: (modo) => { if (!cena) return; cena.construindo = modo || null; cena.marcar([]); },
+    construir: (modo) => { if (!cena) return; cena.construindo = modo || null; if (!modo) cena.livre = null; cena.marcar([]); },
     marcar: (formas) => cena && cena.marcar(formas),
     perto: () => (cena ? cena.perto : null),
     destruir: () => jogo.destroy(true),

@@ -16,6 +16,8 @@ const DICA = { mao: 'Arraste para olhar a casa.', comodo: 'Arraste no chão para
   cor: 'Escolha a cor e toque no cômodo.', item: 'Escolha o item e toque no chão.', mover: 'Toque no item e depois no lugar novo.', escada: 'Toque no chão: a escada sobe para o andar de cima.',
   fio: 'Toque numa luz e depois no interruptor.', apagar: 'Toque no que quer apagar.' };
 
+// Só o cômodo e a parede se desenham arrastando; com as outras ferramentas, um dedo arrastando move a câmera (adendo 3).
+const modoDe = (f) => (f === 'comodo' || f === 'parede' ? 'desenhar' : 'mao');
 export function criarConstrutor({ raiz, motor, enviar, aviso }) {
   const barra = document.createElement('div'); barra.className = 'jogo__construtor'; barra.hidden = true; raiz.appendChild(barra);
   let m = null, orig = null, base = 0, andar = 0, mapaId = '', antes = [], depois = [], ferramenta = 'mao', piso = 'madeira', cor = 'creme', modelo = 'sofa', grupo = 'Sala', escolhido = null, inicio = null, sujo = false, sair = 0;
@@ -71,6 +73,7 @@ export function criarConstrutor({ raiz, motor, enviar, aviso }) {
   function evento(tipo, x, y) {
     if (!m) return; const t = ferramenta;
     if (tipo === 'inicio') { inicio = { x, y }; return; }
+    if (tipo === 'arrastou') { inicio = null; return; } // o dedo moveu a câmera: não é toque (adendo 3)
     if (!inicio) return;
     if (t === 'comodo' || t === 'parede') {
       const f = forma(inicio, x, y);
@@ -103,22 +106,23 @@ export function criarConstrutor({ raiz, motor, enviar, aviso }) {
     barra.innerHTML = `<p class="jogo__texto2">${esc(DICA[ferramenta])} Andar ${andar === 0 ? 'térreo' : andar}${sujo ? ' · não salvo' : ''}</p>`
       + (opcoes ? `<div class="jogo__opcoes">${opcoes}</div>` : '')
       + `<div class="jogo__ferramentas">${FERRAMENTAS.map(([k, n]) => b('f:' + k, n, k === ferramenta ? ' jogo__celula--sel' : '')).join('')}</div>`
-      + `<div class="jogo__ferramentas">${b('andar:-', 'Andar abaixo')}${b('andar:+', 'Andar acima')}${b('desfazer', 'Desfazer')}${b('refazer', 'Refazer')}${b('salvar', 'Salvar')}${b('sair', sair ? 'Sair sem salvar?' : 'Sair')}</div>`;
+      + `<div class="jogo__ferramentas">${b('andar:-', 'Andar abaixo')}${b('andar:+', 'Andar acima')}${b('desfazer', 'Desfazer')}${b('refazer', 'Refazer')}${b('ver', 'Ver tudo')}${b('salvar', 'Salvar')}${b('sair', sair ? 'Sair sem salvar?' : 'Sair')}</div>`;
   }
   barra.addEventListener('click', async (e) => {
     const k = (e.target.closest('[data-c]') || {}).dataset; if (!k || !k.c) return; const [a, v] = k.c.split(/:(.*)/s); if (a !== 'sair') sair = 0;
-    if (a === 'f') { ferramenta = v; escolhido = null; motor.construir(v === 'mao' ? 'mao' : 'ferramenta'); }
+    if (a === 'f') { ferramenta = v; escolhido = null; motor.construir(modoDe(v)); }
     else if (a === 'piso') piso = v; else if (a === 'cor') cor = v; else if (a === 'grupo') { grupo = v; modelo = (CATALOGO.find((c) => c.grupo === v) || {}).modelo || modelo; } else if (a === 'modelo') modelo = v;
     else if (a === 'andar') { const n = Math.max(0, Math.min(3, andar + (v === '+' ? 1 : -1))); if (n !== andar) { andar = n; motor.remontar(m, andar); } }
     else if (a === 'desfazer' || a === 'refazer') { const de = a === 'desfazer' ? antes : depois, para = a === 'desfazer' ? depois : antes; if (!de.length) return aviso('Nada para ' + a + '.');
       para.push(JSON.stringify(m)); m = JSON.parse(de.pop()); sujo = true; motor.remontar(m, andar); }
+    else if (a === 'ver') motor.verTudo();
     else if (a === 'salvar') { const r = await enviar({ acao: 'construir', valor: { mapa: m, base } }); if (!r) return;
       if (r.ok === false) return aviso(r.erro || 'Não deu para salvar.', 'erro'); if (r.mapa) { m = copia(r.mapa); base = r.mapa.versao; } orig = copia(m); sujo = false; antes = []; depois = []; aviso('Salvo.'); }
     else if (a === 'sair') { if (sujo && !sair) { sair = 1; return desenhar(); } return fechar(); }
     desenhar();
   });
   function abrir() { m = copia(motor.mapa()); base = m.versao; mapaId = m.id; andar = motor.andarVisto(); antes = []; depois = []; sujo = false; sair = 0; escolhido = null; ferramenta = 'comodo';
-    orig = copia(m); normalizar(); barra.hidden = false; motor.construir('ferramenta'); motor.remontar(m, andar); desenhar(); }
+    orig = copia(m); normalizar(); barra.hidden = false; motor.construir(modoDe(ferramenta)); motor.remontar(m, andar); desenhar(); }
   function fechar() { barra.hidden = true; motor.construir(null); if (sujo) aviso('Saiu sem salvar.'); motor.remontar(orig, 0); m = null; sujo = false; }
   return { abrir, fechar, evento, aberto: () => !barra.hidden };
 }
