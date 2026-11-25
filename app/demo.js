@@ -212,6 +212,10 @@ function painel(tela, c, estado) {
     return { hoje: '2026-11-23', mulheres: [{ quem: 'pessoa:pepper', nome: 'Pepper', hoje: { fase: 'fertil', fase_nome: 'fértil', dia: 12, duracao: 29, sinais: ['com energia boa'], proxima: '2026-12-11' },
       meses: [mes(2026, 11), mes(2026, 12), mes(2027, 1), mes(2027, 2)] }, { quem: 'personagem:Morgan', nome: 'Morgan', hoje: null, meses: [] }] };
   }
+  if (tela === 'mundo' && c.acao === 'variedade') return { assuntos: 11, assuntos_antes: 13, repetidas: 2, arcos: 2, novidade: false };
+  if (tela === 'registros' && c.acao === 'notas') return { historico: [{ em: '2026-11-23T20:00:00Z', de: '2026-11-22', ate: '2026-11-22', media: 6.4, rodada: 'antes' }] };
+  if (tela === 'registros' && c.acao === 'avaliar') return { media: 7.3, pior_trecho: '"já te respondo" (soou como atendente)', notas: { memoria: 7.7, consistencia: 8, limite_do_conhecimento: 8.3, emocao: 6.7, iniciativa: 7, discordancia: 6 },
+    historico: [] };
   if (tela === 'registros' && c.acao === 'exportar') return { nome_arquivo: `conversa-${c.de}.md`, texto: '# Conversa do Jean com a Pepper\n\n**Jean** (09:00 / 07:00): bom dia\n' };
   if (tela === 'pedidos' && c.acao === 'pronto') S.pedidos = S.pedidos.filter((p) => p.id !== c.id);
   if (tela === 'pedidos' && c.acao === 'levei_ao_revisor') S.pedidos.forEach((p) => { if (p.id === c.id) Object.assign(p, { estado: 'com_jean', data: '2026-11-23' }); });
