@@ -67,6 +67,7 @@
   --jogo-borda: #FAD28C;
   --jogo-texto: #FFF8EC;
   --jogo-texto-2: #B9A6D6;
+  --jogo-sel: #3B2A55;
   --jogo-bem: #6FA36B;
   --jogo-meio: #F6D76B;
   --jogo-mal: #E0405A;
@@ -96,6 +97,7 @@
     --jogo-borda: #FAD28C;
     --jogo-texto: #FFF8EC;
     --jogo-texto-2: #B9A6D6;
+    --jogo-sel: #3B2A55;
   }
 }
 :root[data-theme="dark"] {
@@ -121,6 +123,7 @@
   --jogo-borda: #FAD28C;
   --jogo-texto: #FFF8EC;
   --jogo-texto-2: #B9A6D6;
+  --jogo-sel: #3B2A55;
 }
 @media (prefers-reduced-motion: reduce) {
   :root { --tempo-rapido: 0ms; --tempo: 0ms; }
