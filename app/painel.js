@@ -257,7 +257,7 @@ const PJ12 = {
       ? lista(...d.registro.map((r) => item(esc(r.hora) + ' · ' + esc(r.texto), { det: esc(r.det || ''), fim: r.usd != null ? dolares(r.usd) : '' })))
       : '<p class="texto-2">Nada registrado hoje.</p>')
     + '<h2>Exportar conversa</h2><p class="texto-2">Um arquivo de texto para levar ao revisor: as mensagens, as linhas e o custo de cada resposta.</p>'
-    + editor('ed-exportar', campo('Período', 'pe', { opcoes: [['1', 'Hoje'], ['3', '3 dias'], ['7', '7 dias'], ['intervalo', 'Um intervalo']], valor: '1', nome: 'periodo' })
+    + editor('ed-exportar', campo('Período', 'pe', { opcoes: [['1', 'Hoje'], ['3', '3 dias'], ['7', '7 dias'], ['intervalo', 'Um intervalo']], valor: '3', nome: 'periodo' })
       + campo('De', 'de', { tipo: 'date', nome: 'de' }) + campo('Até', 'ate', { tipo: 'date', nome: 'ate' }))
     + acoes(botao('Exportar conversa', { principal: true, attrs: ' data-editor="ed-exportar" data-exportar' })) + '<div data-arquivo></div>'
     + '<h2>Nota de humanidade</h2><p class="texto-2">Um juiz lê a conversa do período, 3 vezes, e dá de 1 a 10 em 6 itens. Para comparar antes e depois de cada rodada.</p>'
