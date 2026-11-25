@@ -289,10 +289,22 @@ const PJ12 = {
   },
 };
 
+// Onde ela fala (DEC-143): WhatsApp ou App, o estado da conexão e o que a Evolution precisa (o webhook e o segredo).
+const ESTADO_WA = { conectado: 'conectado', caiu: 'caiu: ela voltou a falar pelo app', desligado: 'ainda não conectado' };
+function ondeFala(w) {
+  if (!w) return '';
+  return '<h2>Onde ela fala</h2>' + lista(item('Agora', { det: w.canal === 'whatsapp' ? 'WhatsApp (o push do app fica desligado)' : 'App' }),
+    item('WhatsApp', { det: esc(ESTADO_WA[w.estado] || w.estado), cls: w.estado === 'caiu' ? 'item--vencido' : '' }),
+    item('Webhook da Evolution', { det: esc(w.webhook) }), item('Segredo (cabeçalho x-central-segredo)', { det: esc(w.segredo || '') }))
+    + editor('ed-wa', campo('Onde ela fala', 'wc', { opcoes: [['whatsapp', 'WhatsApp'], ['app', 'App']], valor: w.canal, nome: 'canal' })
+      + campo('Endereço da Evolution (https://...)', 'wu', { valor: w.url, nome: 'url' }) + campo('Número do Jean (com o país e o DDD)', 'wn', { valor: w.numero, nome: 'numero', extra: ' inputmode="numeric"' }))
+    + acoes(botao('Mudar onde ela fala', { leve: true, attrs: ' data-editor="ed-wa" data-wa' }));
+}
+
 const PJ13 = {
   ...P, titulo: 'Sistema',
-  carregar: () => painel('sistema'),
-  corpo: (d) => lista(...(d.servicos || []).map((s) => item(esc(s.nome), { det: esc(s.estado), cls: s.estado === 'fora' ? 'item--vencido' : '' })))
+  carregar: async () => { const d = await painel('sistema'); try { d.wa = await painel('sistema', 'whatsapp'); } catch (e) { d.wa = null; } return d; },
+  corpo: (d) => ondeFala(d.wa) + lista(...(d.servicos || []).map((s) => item(esc(s.nome), { det: esc(s.estado), cls: s.estado === 'fora' ? 'item--vencido' : '' })))
     + acoes(botao('Fazer backup agora', { principal: true, attrs: ' data-backup' }))
     + '<h2>Testes de personalidade</h2>' + ((d.testes || []).length
       ? lista(...d.testes.map((t) => item(esc(t.nome), { det: esc(t.det), cls: t.passou ? '' : 'item--vencido' })))
@@ -301,6 +313,10 @@ const PJ13 = {
     + '<p class="pequeno">Os testes rodam com a IA de verdade e levam alguns minutos. Toque em Sistema de novo para ver o resultado.</p>',
   depois(raiz, d, ctx) {
     aoTocar(raiz, '[data-backup]', async () => { await painel('sistema', 'fazer_backup_agora'); ctx.recarregar(); });
+    comEditor(raiz, '[data-wa]', async (v) => {
+      try { await painel('sistema', 'whatsapp', { canal: v.canal, url: v.url, numero: v.numero }); ctx.recarregar(); }
+      catch (e) { marcarErro(raiz, 'wu', e.message || 'Não deu certo. Tente de novo.'); }
+    });
     aoTocar(raiz, '[data-testes]', async () => { await painel('sistema', 'rodar_testes', { pessoa_id: 'pepper' }); ctx.recarregar(); });
   },
 };

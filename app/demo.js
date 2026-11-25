@@ -212,6 +212,8 @@ function painel(tela, c, estado) {
     return { hoje: '2026-11-23', mulheres: [{ quem: 'pessoa:pepper', nome: 'Pepper', hoje: { fase: 'fertil', fase_nome: 'fértil', dia: 12, duracao: 29, sinais: ['com energia boa'], proxima: '2026-12-11' },
       meses: [mes(2026, 11), mes(2026, 12), mes(2027, 1), mes(2027, 2)] }, { quem: 'personagem:Morgan', nome: 'Morgan', hoje: null, meses: [] }] };
   }
+  if (tela === 'sistema' && c.acao === 'whatsapp') return { canal: c.canal || 'whatsapp', estado: 'conectado', url: c.url || 'https://evolution.exemplo.com', numero: c.numero || '5541900000000', instancia: 'pepper',
+    segredo: '0a1b2c3d4e5f', webhook: 'https://<o endereço do n8n>/webhook/central/whatsapp' };
   if (tela === 'mundo' && c.acao === 'variedade') return { assuntos: 11, assuntos_antes: 13, repetidas: 2, arcos: 2, novidade: false };
   if (tela === 'registros' && c.acao === 'notas') return { historico: [{ em: '2026-11-23T20:00:00Z', de: '2026-11-22', ate: '2026-11-22', media: 6.4, rodada: 'antes' }] };
   if (tela === 'registros' && c.acao === 'avaliar') return { media: 7.3, pior_trecho: '"já te respondo" (soou como atendente)', notas: { memoria: 7.7, consistencia: 8, limite_do_conhecimento: 8.3, emocao: 6.7, iniciativa: 7, discordancia: 6 },
