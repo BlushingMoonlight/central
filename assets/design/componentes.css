@@ -101,6 +101,16 @@ p + p { margin-top: var(--esp-2); }
 .numeros { display: grid; grid-template-columns: 1fr 1fr; gap: var(--esp-2); }
 .numeros > div { padding: var(--esp-3); background: var(--superficie); border: var(--linha-fina) solid var(--linha); border-radius: var(--raio); }
 
+/* Calendário do ciclo (só no Painel, DEC-141): a fase vem na cor e na letra (M, F, L), com a legenda em palavras. */
+.calendario { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--esp-1); margin: var(--esp-2) 0 var(--esp-4); }
+.calendario span { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: var(--alvo); border-radius: var(--raio-pequeno); border: var(--linha-fina) solid var(--linha); font-size: var(--texto-12); color: var(--texto-2); }
+.calendario b { font-size: var(--texto-13); color: var(--texto); font-weight: var(--peso-normal); }
+.calendario .menstruacao { border-color: var(--perigo); border-width: var(--linha-marca); }
+.calendario .fertil { border-color: var(--certo); border-width: var(--linha-marca); }
+.calendario .lutea { border-color: var(--atencao); border-width: var(--linha-marca); }
+.calendario .hoje { background: var(--superficie-2); }
+.calendario .vago { border-color: transparent; }
+
 /* Barra do protótipo (fora da tela do app) */
 .prototipo { max-width: var(--largura-max); margin: 0 auto; padding: var(--esp-3) var(--esp-4); display: flex; flex-wrap: wrap; gap: var(--esp-2); align-items: center; font-size: var(--texto-13); color: var(--texto-2); border-top: var(--linha-fina) solid var(--linha); }
 .prototipo a, .prototipo button { display: inline-flex; align-items: center; min-height: var(--alvo); min-width: var(--alvo); padding: 0 var(--esp-2); border: var(--linha-fina) solid var(--linha); border-radius: var(--raio-pequeno); background: var(--superficie); color: var(--texto); font: inherit; font-size: var(--texto-13); text-decoration: none; }

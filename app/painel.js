@@ -1,6 +1,6 @@
 // Central — o Painel do Jean (PJ0 a PJ13, só os da entrega 1). Entra-se pelos Ajustes, sem segunda senha (DEC-116).
 // Cada tela chama painel/<tela> com {acao:'ler'} e as ações da tela.
-import { chamar } from './api.js';
+import { chamar, hojeIso } from './api.js';
 import { esc, data, item, lista, botao, acoes, campo, vazio, editor, dolares, porcento, aoTocar, comEditor, comConfirmacao, marcarErro } from './ui.js';
 
 const painel = (tela, acao = 'ler', extra = {}) => chamar('painel/' + tela, { acao, ...extra });
@@ -44,16 +44,34 @@ const PJ1 = {
   },
 };
 
+// O ciclo de cada mulher do mundo (DEC-141): a fase de hoje, o dia e o calendário do mês e dos 3 seguintes. Só o painel.
+const LETRA = { menstruacao: 'M', fertil: 'F', lutea: 'L' };
+const MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+function calendario(m, hoje) {
+  const primeiro = new Date(m.dias[0].d + 'T12:00:00Z').getUTCDay(); const vagos = (primeiro + 6) % 7;
+  return `<h3>${MES[Number(m.mes.slice(5, 7)) - 1]} de ${m.mes.slice(0, 4)}</h3><div class="calendario">` + '<span class="vago"></span>'.repeat(vagos)
+    + m.dias.map((x) => `<span class="${[x.fase || '', x.d === hoje ? 'hoje' : ''].join(' ').trim()}"><b>${Number(x.d.slice(8))}</b>${LETRA[x.fase] || ''}</span>`).join('') + '</div>';
+}
+function ciclos(c) {
+  if (!c || !(c.mulheres || []).length) return '';
+  return '<h2>O ciclo</h2><p class="pequeno">M menstruação · F fértil · L lútea · sem letra: folicular. Só você vê.</p>'
+    + c.mulheres.map((w) => '<h3>' + esc(w.nome) + '</h3>' + (w.hoje
+      ? lista(item('Hoje', { det: `fase ${esc(w.hoje.fase_nome)}, dia ${w.hoje.dia} de ${w.hoje.duracao}` + (w.hoje.sinais.length ? ' · ' + esc(w.hoje.sinais.join(', ')) : '') }),
+        item('Próxima menstruação', { det: data(w.hoje.proxima) })) + w.meses.map((m) => calendario(m, c.hoje)).join('')
+      : '<p class="texto-2">O ciclo ainda não começou.</p>')).join('');
+}
+
 const PJ2 = {
   ...P, titulo: 'Mundo',
-  carregar: () => painel('mundo'),
+  carregar: async () => { const d = await painel('mundo'); try { d.ciclo = await painel('mundo', 'ciclo', { pessoa_id: 'pepper' }); } catch (e) { d.ciclo = null; } return d; },
   corpo: (d) => lista(item('Estado', { det: esc(d.estado) }), item('Ritmo', { det: `de ${d.ritmo_min} minutos a ${d.ritmo_max / 60} horas entre ciclos` }),
     item('Teto do motor', { det: `${dolares(d.teto_motor_dia_usd)} por dia · hoje ${dolares(d.motor_hoje_usd)}` }))
     + '<h2>Últimos ciclos</h2>' + ((d.ciclos || []).length ? lista(...d.ciclos.map((c) => item(esc(c.hora), { det: `${c.eventos} eventos`, fim: dolares(c.usd) }))) : '<p class="texto-2">Nenhum ciclo ainda.</p>')
     + editor('ed-ritmo', campo('Mínimo entre ciclos (minutos)', 'rmin', { valor: String(d.ritmo_min), nome: 'min', extra: ' inputmode="numeric"' })
       + campo('Máximo entre ciclos (minutos)', 'rmax', { valor: String(d.ritmo_max), nome: 'max', extra: ' inputmode="numeric"' }))
     + acoes(botao(d.pausado ? 'Retomar o mundo' : 'Pausar o mundo', { principal: true, attrs: ' data-pausar' }),
-      botao('Mudar o ritmo', { leve: true, attrs: ' data-editor="ed-ritmo" data-ritmo' })),
+      botao('Mudar o ritmo', { leve: true, attrs: ' data-editor="ed-ritmo" data-ritmo' }))
+    + ciclos(d.ciclo),
   depois(raiz, d, ctx) {
     aoTocar(raiz, '[data-pausar]', async () => { await painel('mundo', d.pausado ? 'retomar' : 'pausar', { pessoa_id: 'pepper', motivo: 'pelo painel' }); ctx.recarregar(); });
     comEditor(raiz, '[data-ritmo]', async (v) => { await painel('mundo', 'mudar_ritmo', { pessoa_id: 'pepper', min_minutos: Number(v.min), max_minutos: Number(v.max) }); ctx.recarregar(); });
@@ -212,7 +230,27 @@ const PJ12 = {
     : '<div class="aviso aviso--certo">Nenhuma falha aberta.</div>')
     + '<h2>Registro de hoje</h2>' + ((d.registro || []).length
       ? lista(...d.registro.map((r) => item(esc(r.hora) + ' · ' + esc(r.texto), { det: esc(r.det || ''), fim: r.usd != null ? dolares(r.usd) : '' })))
-      : '<p class="texto-2">Nada registrado hoje.</p>'),
+      : '<p class="texto-2">Nada registrado hoje.</p>')
+    + '<h2>Exportar conversa</h2><p class="texto-2">Um arquivo de texto para levar ao revisor: as mensagens, as linhas e o custo de cada resposta.</p>'
+    + editor('ed-exportar', campo('Período', 'pe', { opcoes: [['1', 'Hoje'], ['3', '3 dias'], ['7', '7 dias'], ['intervalo', 'Um intervalo']], valor: '1', nome: 'periodo' })
+      + campo('De', 'de', { tipo: 'date', nome: 'de' }) + campo('Até', 'ate', { tipo: 'date', nome: 'ate' }))
+    + acoes(botao('Exportar conversa', { principal: true, attrs: ' data-editor="ed-exportar" data-exportar' })) + '<div data-arquivo></div>',
+  depois(raiz) {
+    // O arquivo vai para o compartilhar do iPhone (salvar ou mandar ao revisor); sem ele, baixa.
+    comEditor(raiz, '[data-exportar]', async (v) => {
+      const hoje = hojeIso(); const menos = (n) => new Date(Date.parse(hoje + 'T12:00:00Z') - n * 86400000).toISOString().slice(0, 10);
+      const de = v.periodo === 'intervalo' ? v.de : menos(Number(v.periodo) - 1); const ate = v.periodo === 'intervalo' ? (v.ate || v.de) : hoje;
+      if (!de) { marcarErro(raiz, 'de', 'Escolha o primeiro dia.'); return; }
+      const r = await painel('registros', 'exportar', { pessoa_id: 'pepper', de, ate });
+      // O compartilhar do iPhone só abre dentro de um toque: o arquivo fica pronto, e o Jean toca para mandar ou baixar.
+      const arquivo = new File([r.texto], r.nome_arquivo, { type: 'text/markdown' });
+      const url = URL.createObjectURL(arquivo); const lugar = raiz.querySelector('[data-arquivo]');
+      const pode = !!(navigator.canShare && navigator.canShare({ files: [arquivo] }));
+      lugar.innerHTML = '<p class="texto-2">' + esc(r.nome_arquivo) + ' pronto.</p>' + acoes(pode ? botao('Compartilhar o arquivo', { leve: true, attrs: ' data-compartilhar' }) : '',
+        `<a class="botao botao--leve" href="${url}" download="${esc(r.nome_arquivo)}">Baixar o arquivo</a>`);
+      if (pode) lugar.querySelector('[data-compartilhar]').addEventListener('click', () => navigator.share({ files: [arquivo], title: r.nome_arquivo }).catch(() => {}));
+    });
+  },
 };
 
 const PJ13 = {
