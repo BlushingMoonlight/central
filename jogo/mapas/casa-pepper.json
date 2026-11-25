@@ -1,6 +1,6 @@
 {
   "id": "casa-pepper",
-  "versao": 1,
+  "versao": 2,
   "nome": "O apartamento da Pepper (Brooklyn Heights)",
   "fuso": "America/New_York",
   "largura": 14,
@@ -350,7 +350,8 @@
       "luz": {
         "cor": "#ff8a5c",
         "raio": 40,
-        "auto": "sala"
+        "auto": "sala",
+        "rgb": true
       }
     },
     {
@@ -379,7 +380,8 @@
       "luz": {
         "cor": "#ffd98a",
         "raio": 70,
-        "auto": "sala"
+        "auto": "sala",
+        "rgb": true
       }
     },
     {
@@ -395,7 +397,8 @@
       "luz": {
         "cor": "#ff6fb5",
         "raio": 60,
-        "auto": "nunca"
+        "auto": "nunca",
+        "rgb": true
       }
     },
     {
@@ -573,7 +576,8 @@
       "x": 10,
       "y": 0.1,
       "w": 1.8,
-      "d": 1
+      "d": 1,
+      "inventario": true
     },
     {
       "id": "cafeteira",
@@ -767,7 +771,8 @@
       "x": 10.3,
       "y": 9.2,
       "w": 0.8,
-      "d": 0.7
+      "d": 0.7,
+      "inventario": true
     },
     {
       "id": "tapete-quarto",
@@ -916,6 +921,15 @@
       "d": 0.6,
       "fora": true,
       "chao": true
+    },
+    {
+      "id": "cesto-roupa",
+      "modelo": "cesto_roupa",
+      "x": 10.4,
+      "y": 6.3,
+      "w": 0.6,
+      "d": 0.6,
+      "inventario": true
     }
   ],
   "pontos": {
@@ -946,6 +960,10 @@
         {
           "x": 0.9,
           "y": 6.6
+        },
+        {
+          "x": 3.8,
+          "y": 1.2
         }
       ],
       "andar": [
@@ -960,6 +978,31 @@
         {
           "x": 2,
           "y": 8.5
+        }
+      ],
+      "comer": [
+        {
+          "x": 8.7,
+          "y": 4.3
+        }
+      ],
+      "areia": [
+        {
+          "x": 0.7,
+          "y": 6.7
+        }
+      ],
+      "arranhar": [
+        {
+          "x": 7.3,
+          "y": 7.1
+        }
+      ],
+      "notebook": [
+        {
+          "x": 6.5,
+          "y": 2.9,
+          "z": 16
         }
       ]
     },

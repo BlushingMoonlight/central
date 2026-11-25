@@ -144,6 +144,23 @@ p + p { margin-top: var(--esp-2); }
   border-bottom: var(--linha-fina) solid var(--jogo-texto-2); font: var(--texto-16) ui-monospace, monospace; padding: 0 var(--esp-2); }
 .jogo__linha:focus-visible, .jogo__chip:focus-visible, .jogo__celular:focus-visible { outline: var(--jogo-linha) solid var(--jogo-borda); outline-offset: var(--esp-1); }
 .jogo .carregando, .jogo .aviso { position: absolute; top: 40%; left: var(--esp-4); right: var(--esp-4); }
+/* Os menus de item do jogo (DEC-175): ao lado do item, com um ponto nele; os avisos curtos no alto. */
+.jogo__menu { position: absolute; z-index: 3; width: min(80%, var(--camera)); max-height: 70%; overflow-y: auto; background: var(--jogo-janela); border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pequeno); padding: var(--esp-2); }
+.jogo__ponto { position: absolute; z-index: 3; width: var(--esp-3); height: var(--esp-3); margin: calc(var(--esp-2) * -0.75) 0 0 calc(var(--esp-2) * -0.75); border-radius: 50%; background: var(--jogo-borda); border: var(--jogo-linha) solid var(--jogo-janela); pointer-events: none; }
+.jogo__avisos { position: absolute; z-index: 4; top: calc(env(safe-area-inset-top) + var(--topo) + var(--esp-2)); left: var(--esp-4); right: var(--esp-4); display: flex; flex-direction: column; align-items: center; gap: var(--esp-2); pointer-events: none; }
+.jogo__aviso { max-width: var(--largura-passo); background: var(--jogo-janela); color: var(--jogo-texto); border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pequeno); padding: var(--esp-2) var(--esp-3); font: var(--texto-15) ui-monospace, monospace; }
+.jogo__aviso--erro { border-color: var(--jogo-mal); }
+.jogo__barra { display: inline-block; width: var(--esp-6); height: var(--esp-2); background: var(--jogo-sel); vertical-align: middle; }
+.jogo__barra i { display: block; height: 100%; background: var(--jogo-bem); }
+.jogo__par { display: flex; align-items: center; justify-content: space-between; gap: var(--esp-2); flex-wrap: wrap; }
+.jogo__mini { min-width: var(--alvo-secao); min-height: var(--alvo-secao); background: var(--jogo-sel); color: var(--jogo-texto); border: var(--linha-fina) solid var(--jogo-texto-2); border-radius: var(--raio-pequeno); font: var(--texto-16) ui-monospace, monospace; padding: 0 var(--esp-2); }
+.jogo__cores { display: flex; flex-wrap: wrap; gap: var(--esp-2); padding: var(--esp-2) 0; }
+.jogo__cor { width: var(--alvo-secao); height: var(--alvo-secao); border: var(--jogo-linha) solid var(--jogo-texto); border-radius: var(--raio-pequeno); }
+.jogo__grade { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--esp-2); padding: var(--esp-2) 0; }
+.jogo__celula { min-height: var(--alvo-secao); background: var(--jogo-sel); color: var(--jogo-texto); border: var(--linha-fina) solid var(--jogo-texto-2); border-radius: var(--raio-pequeno); font: var(--texto-15) ui-monospace, monospace; text-align: left; padding: 0 var(--esp-2); }
+.jogo__celula--sel { border-color: var(--jogo-borda); outline: var(--jogo-linha) solid var(--jogo-borda); }
+.jogo__marca { display: flex; align-items: center; gap: var(--esp-2); }
+.jogo__menu button[aria-disabled="true"] { opacity: 0.5; }
 /* O WhatsApp no Painel (DEC-144): a linha com botões embaixo e o QR Code. */
 .item--coluna { flex-wrap: wrap; }
 .item--coluna > .acoes { width: 100%; }

@@ -252,12 +252,25 @@ const ATIVIDADES = [
   { atividade: 'lendo na poltrona', objeto: 'poltrona', pose: 'sentada', balao: 'livro', humor: 'calma' },
   { atividade: 'dormindo', objeto: 'cama', pose: 'deitada', balao: 'zzz', humor: 'calma' },
 ];
-let mapaDemo = null;
-async function jogoDemo() {
+let mapaDemo = null; let jogoEstado = null;
+// A demonstração responde às ações do jogo sem servidor, só para ver os menus funcionarem (o 68 decide de verdade).
+async function jogoDemo(c) {
   if (!mapaDemo) mapaDemo = await (await fetch('jogo/mapas/casa-pepper.json')).json();
+  if (!jogoEstado) { const acesas = ['abajur-chao', 'luzinhas-sala', 'lava', 'aquario', 'pendente', 'abajur-quarto', 'monitor', 'luz-armario', 'poste-1', 'poste-2', 'poste-3'];
+    jogoEstado = { itens: Object.fromEntries(mapaDemo.itens.filter((i) => i.luz).map((i) => [i.id, { ligada: acesas.includes(i.id), brilho: 85, cor: i.luz.cor }])),
+      gato: { nome: 'Biscoito', acao: 'dormindo', saude: 96, idade: 4, necessidades: { fome: 70, sede: 75, sono: 80, diversao: 50, carinho: 60, higiene: 90, bexiga: 80, intestino: 85 } },
+      casa: { louca: 2, lixo: 70, roupa: 3, arrumada: false, ambiente: 68, estoque: { petisco: 5 }, guardados: [] } };
+    Object.assign(jogoEstado.itens, { 'caixa-areia': { sujeira: 65, quantidade: 60 }, 'potes-gato': { racao: 40, agua: 70 }, tv: { ligada: false, canal: 4, volume: 4 },
+      geladeira: { inventario: { compartimentos: [{ nome: 'Prateleira de cima', capacidade: 8, itens: { Leite: 2, Ovos: 6 } }, { nome: 'Prateleira do meio', capacidade: 8, itens: { Frutas: 4 } }] } } }); }
+  const E = jogoEstado; let reacao = null;
+  if (c.acao === 'item') { const e = E.itens[c.item] = E.itens[c.item] || {};
+    if (c.op === 'ligar' || c.op === 'desligar') { e.ligada = c.op === 'ligar'; reacao = 'ue'; } else if (c.op === 'brilho') e.brilho = c.valor; else if (c.op === 'cor') e.cor = c.valor;
+    else if (c.op === 'canal') { e.canal = ((e.canal || 1) % 9) + 1; e.ligada = true; } else if (c.op === 'volume') e.volume = c.valor; else if (c.op === 'mudo') e.mudo = !e.mudo;
+    else if (c.op === 'limpar') e.sujeira = 0; else if (c.op === 'encher') { e.racao = 100; e.agua = 100; } else if (c.op === 'assistir_junto') return { ok: false, erro: 'Para assistir junto, o Jean precisa estar lá (na próxima entrega).' };
+    if (c.item === 'gato') { E.gato.acao = 'ronronando'; E.gato.necessidades.carinho = 95; } }
+  if (c.acao === 'mover' && c.op === 'soltar') { const it = mapaDemo.itens.find((i) => i.id === c.item); if (it) { it.x = c.valor.x; it.y = c.valor.y; mapaDemo.versao = (mapaDemo.versao || 1) + 1; } }
   const pepper = ATIVIDADES[Math.floor(Date.now() / 25000) % ATIVIDADES.length];
-  const acesas = ['abajur-chao', 'luzinhas-sala', 'lava', 'aquario', 'pendente', 'abajur-quarto', 'monitor', 'luz-armario', 'poste-1', 'poste-2', 'poste-3'];
-  return { mapa: mapaDemo, pepper, itens: Object.fromEntries(mapaDemo.itens.filter((i) => i.luz).map((i) => [i.id, { ligada: acesas.includes(i.id), brilho: 85 }])), agora: new Date().toISOString() };
+  return { mapa: mapaDemo, pepper, itens: E.itens, gato: E.gato, casa: E.casa, clima: 'chuva', reacao, avisos: [], agora: new Date().toISOString() };
 }
 
 export async function responder(caminho, corpo, estado) {
@@ -281,7 +294,7 @@ export async function responder(caminho, corpo, estado) {
     const G = [{ id: 'gatos/mingau', nome: 'Mingau', nascimento: '2021-03-14', vacina_proxima: '2027-01-10', racao: 'ração de filhote', racao_acaba: '2026-12-05', veterinario: 'Dra. Paula, clínica do bairro', historico: [] }];
     r = c.acao === 'gato' ? { gato: G[0] } : c.acao === 'gatos' ? { gatos: vazioOu(estado, G, []) } : {};
   } else if (caminho === 'vida') r = vida(c, estado);
-  else if (caminho === 'jogo/cena') r = await jogoDemo();
+  else if (caminho === 'jogo/cena') { r = await jogoDemo(c); if (r.ok === false) return r; }
   else if (caminho === 'agenda') r = agenda(c, estado);
   else if (caminho === 'financas') r = financas(c, estado);
   else if (caminho === 'pessoa') r = pessoa(c, estado);

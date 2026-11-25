@@ -190,6 +190,7 @@ const M = {
   banco: (p) => { caixa(p, 0.05, 0.05, 0.1, 0.1, 6, PAL.preto); caixa(p, 1.05, 0.35, 0.1, 0.1, 6, PAL.preto); caixa(p, 0, 0, 1.2, 0.5, 2, PAL.madeira, { z: 6 }); caixa(p, 0, 0, 1.2, 0.12, 8, PAL.madeira, { z: 8 }); },
   hidrante: (p) => { caixa(p, 0, 0, 0.3, 0.3, 10, PAL.vermelho); caixa(p, 0.05, 0.05, 0.2, 0.2, 3, PAL.vermelho, { z: 10 }); },
   capacho: (p) => losango(p, 0, 0, 1, 0.6, 0, PAL.caramelo, PAL.madeira),
+  cesto_roupa: (p) => { caixa(p, 0.05, 0.05, 0.5, 0.5, 9, PAL.bege, { ditherEsq: PAL.caramelo }); },
   pia_banheiro: (p) => { caixa(p, 0, 0, 0.8, 0.6, 12, PAL.madeira, { topo: PAL.creme }); losango(p, 0.2, 0.15, 0.4, 0.3, 12, PAL.azulejoEsc); },
 };
 // O tamanho máximo de cada modelo (a altura em px), para alocar o sprite.
@@ -257,10 +258,29 @@ function balao(tipo) {
     celular: () => { p.retangulo(5, 2, 4, 8, C.preto); p.retangulo(6, 3, 2, 5, C.verdeClaro); },
     musica: () => { p.retangulo(7, 2, 1, 6, C.vinho); p.retangulo(7, 2, 3, 1, C.vinho); p.retangulo(5, 7, 3, 2, C.vinho); },
     porta: () => { p.retangulo(4, 2, 6, 8, C.madeiraEsc); p.retangulo(5, 3, 4, 6, C.madeira); p.ponto(8, 6, C.amarelo); },
+    susto: () => { p.retangulo(6, 2, 2, 6, C.vermelho); p.retangulo(6, 9, 2, 1, C.vermelho); },
   }[tipo]; if (d) d();
   p.contornar(); return p;
 }
-export const BALOES = ['zzz', 'pergunta', 'coracao', 'livro', 'notebook', 'panela', 'comida', 'tv', 'celular', 'musica', 'porta'];
+export const BALOES = ['zzz', 'pergunta', 'coracao', 'livro', 'notebook', 'panela', 'comida', 'tv', 'celular', 'musica', 'porta', 'susto'];
+
+// Os detalhes do estado da casa, por cima dos itens (DEC-175): a louça, o lixo, a roupa, a cama desarrumada, a areia suja,
+// o xixi fora da caixa, a ração no pote, a mosca, a gota de chuva, o floco de neve e a nota de música.
+export function detalhes() {
+  const s = {}; const C = PAL; const n = (w, h, f) => { const p = new Pincel(w, h); f(p); return p; };
+  s.louca = n(14, 10, (p) => { for (let k = 0; k < 3; k++) { p.retangulo(1 + k * 3, 6 - k * 2, 8, 2, k % 2 ? C.creme : C.azulGelo); p.ponto(2 + k * 3, 6 - k * 2, C.cinza); } p.retangulo(9, 1, 2, 4, C.cinzaClaro); p.contornar(); });
+  s.lixo = n(12, 12, (p) => { p.retangulo(2, 3, 8, 8, C.preto); p.retangulo(4, 1, 4, 2, C.preto); p.ponto(5, 5, C.cinza); p.ponto(7, 8, C.cinza); p.contornar(); });
+  s.roupa = n(14, 9, (p) => { p.retangulo(1, 4, 6, 4, C.azulClaro); p.retangulo(5, 2, 6, 4, C.rosaClaro); p.retangulo(8, 5, 5, 3, C.amarelo); p.contornar(); });
+  s.lencol = n(26, 12, (p) => { p.retangulo(2, 5, 20, 5, C.azulClaro); p.retangulo(6, 3, 10, 3, C.azul); p.retangulo(16, 7, 8, 3, C.creme); p.contornar(); });
+  s.areia_suja = n(16, 8, (p) => { for (const [x, y] of [[3, 3], [7, 2], [10, 4], [5, 5], [12, 2]]) p.retangulo(x, y, 2, 1, C.madeiraEsc); });
+  s.mancha = n(12, 6, (p) => { p.retangulo(2, 2, 8, 2, C.amarelo); p.retangulo(4, 1, 4, 4, C.amarelo); });
+  s.racao = n(8, 5, (p) => { for (const [x, y] of [[1, 2], [3, 1], [5, 2], [2, 3], [4, 3]]) p.ponto(x, y, C.madeiraEsc); });
+  s.mosca = n(3, 3, (p) => { p.ponto(1, 1, C.preto); p.ponto(0, 0, C.cinzaClaro); p.ponto(2, 0, C.cinzaClaro); });
+  s.gota = n(1, 4, (p) => p.retangulo(0, 0, 1, 4, C.azulGelo));
+  s.floco = n(3, 3, (p) => { p.ponto(1, 0, C.creme); p.ponto(0, 1, C.creme); p.ponto(1, 1, C.creme); p.ponto(2, 1, C.creme); p.ponto(1, 2, C.creme); });
+  s.nota = n(5, 7, (p) => { p.retangulo(3, 0, 1, 5, C.amarelo); p.retangulo(1, 4, 3, 2, C.amarelo); p.retangulo(3, 0, 2, 1, C.amarelo); });
+  return s;
+}
 
 // Todos os sprites de pessoa e de bicho, pela chave que a cena usa.
 export function personagens() {
