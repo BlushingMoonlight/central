@@ -73,7 +73,8 @@ const VI2 = {
   },
   corpo(d) {
     const t = d.tarefa;
-    const hist = (t.historico || []).map((h) => h.o_que + ' ' + data(h.quando, true)).join(' · ');
+    // O 41 grava o histórico como texto ("2026-11-24 criada por pepper"); a demonstração, como {o_que, quando}.
+    const hist = (t.historico || []).map((h) => (typeof h === 'string' ? esc(h) : esc(h.o_que) + ' ' + data(h.quando, true))).join(' · ');
     return `<h1>${esc(t.titulo)}</h1>`
       + lista(item('Prazo', { det: t.prazo ? data(t.prazo) : 'sem prazo' }), item('Área', { det: esc(t.area) }),
         item('De onde veio', { det: esc(t.origem || '') }), t.notas ? item('Notas', { det: esc(t.notas) }) : '',
