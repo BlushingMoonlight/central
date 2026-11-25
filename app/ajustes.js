@@ -8,7 +8,7 @@ const aparelho = (acao, extra = {}) => chamar('aparelho', { acao, ...extra });
 const AJ0 = {
   tipo: 'filho', titulo: 'Ajustes', voltar: ['CV', 'Pepper'],
   corpo: () => lista(item('Avisos', { ir: 'AJ1' }), item('Entrada e aparelhos', { ir: 'AJ2' }), item('Instalar', { ir: 'AJ3' }),
-    item('Painel do Jean', { ir: 'PJ0' })),
+    item('Painel do Jean', { ir: 'PJ0' }), item('Jogo', { det: 'A casa da Pepper, em teste', ir: 'JG' })),
 };
 
 const AJ1 = {

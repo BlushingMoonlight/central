@@ -78,7 +78,7 @@ const razao = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
 const pares = [['texto', 'fundo'], ['texto', 'superficie'], ['texto', 'superficie-2'], ['texto-2', 'fundo'], ['texto-2', 'superficie'],
   ['texto-2', 'superficie-2'], ['destaque', 'fundo'], ['destaque', 'superficie'], ['sobre-destaque', 'destaque'], ['texto-ele', 'bolha-ele'],
   ['texto', 'bolha-ela'], ['perigo', 'fundo'], ['perigo', 'superficie'], ['atencao', 'superficie'], ['atencao', 'superficie-2'],
-  ['certo', 'superficie'], ['sobre-camera', 'camera-fundo'], ['texto-2', 'bolha-ela']];
+  ['certo', 'superficie'], ['sobre-camera', 'camera-fundo'], ['texto-2', 'bolha-ela'], ['jogo-texto', 'jogo-janela'], ['jogo-texto-2', 'jogo-janela'], ['jogo-borda', 'jogo-janela']];
 let paresOk = 0;
 for (const [modo, t] of [['claro', claro], ['escuro', escuro]]) for (const [a, b] of pares) {
   if (!t[a] || !t[b]) { erros.push(`tokens.css (${modo}): falta --${a} ou --${b}`); continue; }
@@ -119,11 +119,24 @@ const estatico = process.argv.includes('--estatico');
   const id = 'areas/documentos/tarefas/apostilar-certidao-curitiba';
   for (const h of ['#VI2/' + encodeURIComponent(id), '#VI2/' + id]) { const r = lerRota(h, T); if (r.cod !== 'VI2' || r.args.length !== 1 || r.args[0] !== id) erros.push(`rota ${h}: o id da tarefa chegou partido (${JSON.stringify(r.args)})`); }
   if (lerRota('#XX/1', T).cod !== 'CV' || lerRota('#VI2', T).args.length) erros.push('rota: código desconhecido ou sem id não volta à Conversa sem argumentos'); }
+// O jogo (etapa 8, entrega 1): a ordem de desenho, o caminho com as paredes, a luz pela hora e o limite de 8 luzes.
+{ const J = await import('../jogo/cena.js'); const mapa = JSON.parse(ler('jogo/mapas/casa-pepper.json'));
+  const sofa = mapa.itens.find((i) => i.id === 'sofa');
+  if (!(J.profundidadePessoa(3.5, 3.6) < J.profundidade(sofa) && J.profundidadePessoa(3.5, 5.6) > J.profundidade(sofa))) erros.push('jogo: quem está atrás do sofá não fica escondido');
+  const tapete = mapa.itens.find((i) => i.id === 'tapete-sala'); if (!(J.profundidade(tapete) < J.profundidadePessoa(0, 0))) erros.push('jogo: o tapete fica por cima de alguém');
+  const monitor = mapa.itens.find((i) => i.id === 'monitor'), mesa = mapa.itens.find((i) => i.id === 'mesa-trabalho');
+  if (!(J.profundidade(monitor) > J.profundidade(mesa) && J.profundidade(monitor) < J.profundidadePessoa(6.8, 3.8))) erros.push('jogo: o monitor some atrás da mesa ou cobre quem está sentada');
+  const g = J.grade(mapa, ['fogao']); const c = J.caminho(g, { x: 3.5, y: 3.4 }, { x: 9.5, y: 1.6 });
+  if (!c.length) erros.push('jogo: a Pepper não acha o caminho da sala até o fogão');
+  for (let k = 1; k < c.length; k++) { const a = c[k - 1], b = c[k]; if ((a.x < 8) !== (b.x < 8) && !(a.y >= 2 && a.y < 4)) erros.push(`jogo: o caminho atravessa a parede da cozinha em y=${a.y}`); }
+  if (!(J.escuridao(12) < 0.15 && J.escuridao(22) > 0.5 && Math.abs(J.escuridao(18.99) - J.escuridao(19.01)) < 0.02)) erros.push('jogo: a noite não escurece aos poucos');
+  const muitas = Array.from({ length: 12 }, (_, i) => ({ id: 'l' + i, ligada: true, brilho: 80, raio: 60, wx: i * 10, wy: 0 }));
+  if (J.luzesAtivas(muitas, 0, 0).length !== 8 || J.luzesAtivas(muitas.map((l) => ({ ...l, ligada: false })), 0, 0).length) erros.push('jogo: mais de 8 luzes ativas, ou luz apagada acesa'); }
 let contas = { telas: 0, estados: 0, app: 0 };
 // As rotas do app da entrega 1 (docs/fluxo/arvore.md, "Ordem de implementação"), com ids dos dados de app/demo.js.
 const ROTAS_APP = ['CV', 'CV1', 'CV2', 'CV3', 'K1', 'K2', 'K3', 'K4', 'VI0', 'VI1/casa', 'VI2/t-filtro', 'VI2/areas/casa/tarefas/t-filtro', 'VI3', 'VI4', 'VI5/gatos/mingau', 'VI1/gatos', 'VI6',
   'AG0', 'AG1/c1', 'AG2', 'AG3/carla', 'AG4', 'FI0', 'FI1', 'FI1/saas', 'FI2/g1', 'FI3', 'FI4/a2', 'FI5', 'FI6', 'FI7', 'FI8', 'FI9',
-  'PE1', 'PE4', 'PE5', 'AJ0', 'AJ1', 'AJ2', 'AJ3', 'PJ0', 'PJ1', 'PJ2', 'PJ3', 'PJ4', 'PJ5', 'PJ6', 'PJ7', 'PJ9', 'PJ10', 'PJ12', 'PJ13',
+  'JG', 'PE1', 'PE4', 'PE5', 'AJ0', 'AJ1', 'AJ2', 'AJ3', 'PJ0', 'PJ1', 'PJ2', 'PJ3', 'PJ4', 'PJ5', 'PJ6', 'PJ7', 'PJ9', 'PJ10', 'PJ12', 'PJ13',
   'passo-1', 'passo-4', 'passo-5', 'passo-6', 'passo-7', 'entrar', 'esqueci'];
 if (!estatico) {
   const { chromium } = createRequire(import.meta.url)('playwright');

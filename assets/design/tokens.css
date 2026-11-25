@@ -61,6 +61,16 @@
   --certo: #1B7344;
   --camera-fundo: #1A1D23;
   --sobre-camera: #FFFFFF;
+  /* O jogo (DEC-173): um visual só, o mesmo no claro e no escuro */
+  --jogo-fundo: #1B1430;
+  --jogo-janela: #1A1624;
+  --jogo-borda: #FAD28C;
+  --jogo-texto: #FFF8EC;
+  --jogo-texto-2: #B9A6D6;
+  --jogo-bem: #6FA36B;
+  --jogo-meio: #F6D76B;
+  --jogo-mal: #E0405A;
+  --jogo-linha: 2px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -81,6 +91,11 @@
     --certo: #6FD39C;
     --camera-fundo: #000000;
     --sobre-camera: #FFFFFF;
+    --jogo-fundo: #1B1430;
+    --jogo-janela: #1A1624;
+    --jogo-borda: #FAD28C;
+    --jogo-texto: #FFF8EC;
+    --jogo-texto-2: #B9A6D6;
   }
 }
 :root[data-theme="dark"] {
@@ -101,6 +116,11 @@
   --certo: #6FD39C;
   --camera-fundo: #000000;
   --sobre-camera: #FFFFFF;
+  --jogo-fundo: #1B1430;
+  --jogo-janela: #1A1624;
+  --jogo-borda: #FAD28C;
+  --jogo-texto: #FFF8EC;
+  --jogo-texto-2: #B9A6D6;
 }
 @media (prefers-reduced-motion: reduce) {
   :root { --tempo-rapido: 0ms; --tempo: 0ms; }

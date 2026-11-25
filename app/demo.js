@@ -241,6 +241,25 @@ function entradaDemo(caminho, c, estado) {
   return { ok: true, ...(c.etapa === 'senha' ? { token: 'demo' } : {}) };
 }
 
+// O jogo (JG) com a casa de exemplo: a cada 25 s ela muda de atividade, para ver ela andar até o objeto. As luzes da sala
+// acendem à noite, como no servidor (o 68 decide de verdade).
+const ATIVIDADES = [
+  { atividade: 'lendo no sofá', objeto: 'sofa', pose: 'sentada', balao: 'livro', humor: 'contente' },
+  { atividade: 'cozinhando o jantar', objeto: 'fogao', pose: 'parada', balao: 'panela', humor: 'contente' },
+  { atividade: 'trabalhando no notebook', objeto: 'mesa-trabalho', pose: 'sentada', balao: 'notebook', humor: 'concentrada' },
+  { atividade: 'jantando', objeto: 'mesa-jantar', pose: 'sentada', balao: 'comida', humor: 'contente' },
+  { atividade: 'no banho', privado: true, balao: 'porta', humor: 'calma' },
+  { atividade: 'lendo na poltrona', objeto: 'poltrona', pose: 'sentada', balao: 'livro', humor: 'calma' },
+  { atividade: 'dormindo', objeto: 'cama', pose: 'deitada', balao: 'zzz', humor: 'calma' },
+];
+let mapaDemo = null;
+async function jogoDemo() {
+  if (!mapaDemo) mapaDemo = await (await fetch('jogo/mapas/casa-pepper.json')).json();
+  const pepper = ATIVIDADES[Math.floor(Date.now() / 25000) % ATIVIDADES.length];
+  const acesas = ['abajur-chao', 'luzinhas-sala', 'lava', 'aquario', 'pendente', 'abajur-quarto', 'monitor', 'luz-armario', 'poste-1', 'poste-2', 'poste-3'];
+  return { mapa: mapaDemo, pepper, itens: Object.fromEntries(mapaDemo.itens.filter((i) => i.luz).map((i) => [i.id, { ligada: acesas.includes(i.id), brilho: 85 }])), agora: new Date().toISOString() };
+}
+
 export async function responder(caminho, corpo, estado) {
   if (estado === 'carregando') return new Promise(() => {});
   await new Promise((ok) => setTimeout(ok, 30));
@@ -262,6 +281,7 @@ export async function responder(caminho, corpo, estado) {
     const G = [{ id: 'gatos/mingau', nome: 'Mingau', nascimento: '2021-03-14', vacina_proxima: '2027-01-10', racao: 'ração de filhote', racao_acaba: '2026-12-05', veterinario: 'Dra. Paula, clínica do bairro', historico: [] }];
     r = c.acao === 'gato' ? { gato: G[0] } : c.acao === 'gatos' ? { gatos: vazioOu(estado, G, []) } : {};
   } else if (caminho === 'vida') r = vida(c, estado);
+  else if (caminho === 'jogo/cena') r = await jogoDemo();
   else if (caminho === 'agenda') r = agenda(c, estado);
   else if (caminho === 'financas') r = financas(c, estado);
   else if (caminho === 'pessoa') r = pessoa(c, estado);

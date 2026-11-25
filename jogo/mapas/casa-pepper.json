@@ -1,0 +1,986 @@
+{
+  "id": "casa-pepper",
+  "versao": 1,
+  "nome": "O apartamento da Pepper (Brooklyn Heights)",
+  "fuso": "America/New_York",
+  "largura": 14,
+  "fundo": 10,
+  "comodos": [
+    {
+      "id": "sala",
+      "nome": "Sala",
+      "piso": "madeira",
+      "area": [
+        0,
+        0,
+        8,
+        10
+      ]
+    },
+    {
+      "id": "cozinha",
+      "nome": "Cozinha",
+      "piso": "terracota",
+      "area": [
+        8,
+        0,
+        14,
+        5
+      ]
+    },
+    {
+      "id": "quarto",
+      "nome": "Quarto",
+      "piso": "carpete",
+      "area": [
+        8,
+        5,
+        14,
+        10
+      ]
+    },
+    {
+      "id": "banheiro",
+      "nome": "Banheiro",
+      "piso": "azulejo",
+      "area": [
+        11,
+        7,
+        14,
+        10
+      ],
+      "privado": true
+    }
+  ],
+  "paredes": [
+    {
+      "de": [
+        0,
+        0
+      ],
+      "para": [
+        14,
+        0
+      ],
+      "altura": "alta",
+      "cor": "rosado"
+    },
+    {
+      "de": [
+        0,
+        0
+      ],
+      "para": [
+        0,
+        10
+      ],
+      "altura": "alta",
+      "cor": "rosado"
+    },
+    {
+      "de": [
+        0,
+        10
+      ],
+      "para": [
+        14,
+        10
+      ],
+      "altura": "baixa",
+      "cor": "rosado"
+    },
+    {
+      "de": [
+        14,
+        0
+      ],
+      "para": [
+        14,
+        10
+      ],
+      "altura": "baixa",
+      "cor": "rosado"
+    },
+    {
+      "de": [
+        8,
+        0
+      ],
+      "para": [
+        8,
+        10
+      ],
+      "altura": "baixa",
+      "cor": "rosado"
+    },
+    {
+      "de": [
+        8,
+        5
+      ],
+      "para": [
+        14,
+        5
+      ],
+      "altura": "baixa",
+      "cor": "rosado"
+    },
+    {
+      "de": [
+        11,
+        7
+      ],
+      "para": [
+        11,
+        10
+      ],
+      "altura": "baixa",
+      "cor": "azulejo"
+    },
+    {
+      "de": [
+        11,
+        7
+      ],
+      "para": [
+        14,
+        7
+      ],
+      "altura": "baixa",
+      "cor": "azulejo"
+    }
+  ],
+  "aberturas": [
+    {
+      "tipo": "janela",
+      "em": [
+        3,
+        0
+      ],
+      "largura": 2,
+      "lado": "n"
+    },
+    {
+      "tipo": "janela",
+      "em": [
+        0,
+        6
+      ],
+      "largura": 2,
+      "lado": "w"
+    },
+    {
+      "tipo": "janela",
+      "em": [
+        10,
+        0
+      ],
+      "largura": 2,
+      "lado": "n"
+    },
+    {
+      "tipo": "vao",
+      "em": [
+        8,
+        2
+      ],
+      "largura": 2,
+      "lado": "w"
+    },
+    {
+      "tipo": "vao",
+      "em": [
+        8,
+        7
+      ],
+      "largura": 2,
+      "lado": "w"
+    },
+    {
+      "tipo": "porta",
+      "em": [
+        11,
+        8
+      ],
+      "largura": 1,
+      "lado": "w",
+      "privada": true
+    },
+    {
+      "tipo": "porta",
+      "em": [
+        3,
+        10
+      ],
+      "largura": 1,
+      "lado": "n",
+      "saida": {
+        "mapa": "rua-pepper",
+        "x": 0,
+        "y": 0
+      }
+    }
+  ],
+  "itens": [
+    {
+      "id": "sofa",
+      "modelo": "sofa",
+      "x": 2,
+      "y": 4,
+      "w": 3,
+      "d": 1,
+      "uso": [
+        {
+          "x": 3.5,
+          "y": 4.5,
+          "pose": "sentada"
+        }
+      ]
+    },
+    {
+      "id": "manta",
+      "modelo": "manta",
+      "x": 2.2,
+      "y": 4.1,
+      "w": 1,
+      "d": 1,
+      "z": 10,
+      "solto": true
+    },
+    {
+      "id": "tapete-sala",
+      "modelo": "tapete",
+      "x": 2,
+      "y": 5.4,
+      "w": 3,
+      "d": 2,
+      "chao": true
+    },
+    {
+      "id": "pufe",
+      "modelo": "pufe",
+      "x": 5.2,
+      "y": 5.8,
+      "w": 1,
+      "d": 1
+    },
+    {
+      "id": "mesa-centro",
+      "modelo": "mesa_baixa",
+      "x": 2.8,
+      "y": 6,
+      "w": 1.5,
+      "d": 1
+    },
+    {
+      "id": "estante",
+      "modelo": "estante",
+      "x": 0.1,
+      "y": 1,
+      "w": 1,
+      "d": 2,
+      "inventario": true
+    },
+    {
+      "id": "toca-discos",
+      "modelo": "toca_discos",
+      "x": 0.2,
+      "y": 3.2,
+      "w": 1,
+      "d": 1
+    },
+    {
+      "id": "tv",
+      "modelo": "tv",
+      "x": 5,
+      "y": 0.05,
+      "w": 2,
+      "d": 0.3,
+      "z": 18,
+      "parede": "n"
+    },
+    {
+      "id": "mesa-trabalho",
+      "modelo": "mesa",
+      "x": 6,
+      "y": 2.5,
+      "w": 1.6,
+      "d": 1,
+      "uso": [
+        {
+          "x": 6.8,
+          "y": 3.8,
+          "pose": "sentada",
+          "dir": "ne"
+        }
+      ]
+    },
+    {
+      "id": "cadeira-trabalho",
+      "modelo": "cadeira",
+      "x": 6.4,
+      "y": 3.5,
+      "w": 0.8,
+      "d": 0.8
+    },
+    {
+      "id": "monitor",
+      "modelo": "monitor",
+      "x": 6.4,
+      "y": 2.6,
+      "w": 0.8,
+      "d": 0.4,
+      "z": 14,
+      "solto": true,
+      "luz": {
+        "cor": "#7fb6ff",
+        "raio": 34,
+        "auto": "trabalho"
+      }
+    },
+    {
+      "id": "lava",
+      "modelo": "lava",
+      "x": 7.2,
+      "y": 2.6,
+      "w": 0.4,
+      "d": 0.4,
+      "z": 14,
+      "solto": true,
+      "luz": {
+        "cor": "#ff8a5c",
+        "raio": 40,
+        "auto": "sala"
+      }
+    },
+    {
+      "id": "abajur-chao",
+      "modelo": "abajur_chao",
+      "x": 1.2,
+      "y": 4.2,
+      "w": 0.6,
+      "d": 0.6,
+      "luz": {
+        "cor": "#ffc27a",
+        "raio": 96,
+        "auto": "sala"
+      }
+    },
+    {
+      "id": "luzinhas-sala",
+      "modelo": "luzinhas",
+      "x": 1,
+      "y": 0.05,
+      "w": 5,
+      "d": 0.2,
+      "z": 40,
+      "parede": "n",
+      "solto": true,
+      "luz": {
+        "cor": "#ffd98a",
+        "raio": 70,
+        "auto": "sala"
+      }
+    },
+    {
+      "id": "fita-led",
+      "modelo": "fita_led",
+      "x": 0.05,
+      "y": 4.8,
+      "w": 0.2,
+      "d": 3,
+      "z": 44,
+      "parede": "w",
+      "solto": true,
+      "luz": {
+        "cor": "#ff6fb5",
+        "raio": 60,
+        "auto": "nunca"
+      }
+    },
+    {
+      "id": "quadro-sala",
+      "modelo": "quadro",
+      "x": 0.05,
+      "y": 5.2,
+      "w": 0.2,
+      "d": 1,
+      "z": 22,
+      "parede": "w",
+      "solto": true
+    },
+    {
+      "id": "relogio-sala",
+      "modelo": "relogio",
+      "x": 7.2,
+      "y": 0.05,
+      "w": 0.6,
+      "d": 0.2,
+      "z": 30,
+      "parede": "n",
+      "solto": true
+    },
+    {
+      "id": "relogio-jean",
+      "modelo": "relogio_j",
+      "x": 0.05,
+      "y": 8.6,
+      "w": 0.2,
+      "d": 0.6,
+      "z": 30,
+      "parede": "w",
+      "solto": true
+    },
+    {
+      "id": "aquario",
+      "modelo": "aquario",
+      "x": 0.2,
+      "y": 8.4,
+      "w": 1,
+      "d": 1,
+      "luz": {
+        "cor": "#6fd0ff",
+        "raio": 40,
+        "auto": "sempre"
+      }
+    },
+    {
+      "id": "planta-grande",
+      "modelo": "planta_grande",
+      "x": 7.1,
+      "y": 8.9,
+      "w": 0.8,
+      "d": 0.8
+    },
+    {
+      "id": "planta-pendurada",
+      "modelo": "planta_pendurada",
+      "x": 2.4,
+      "y": 0.05,
+      "w": 0.6,
+      "d": 0.4,
+      "z": 40,
+      "parede": "n",
+      "solto": true
+    },
+    {
+      "id": "vasinhos",
+      "modelo": "vasinhos",
+      "x": 3.1,
+      "y": 0.1,
+      "w": 1.6,
+      "d": 0.3,
+      "z": 20,
+      "parede": "n",
+      "solto": true
+    },
+    {
+      "id": "violao",
+      "modelo": "violao",
+      "x": 4.8,
+      "y": 0.3,
+      "w": 0.4,
+      "d": 0.4
+    },
+    {
+      "id": "cesto-revistas",
+      "modelo": "cesto",
+      "x": 1.4,
+      "y": 6.6,
+      "w": 0.6,
+      "d": 0.6
+    },
+    {
+      "id": "livros-chao",
+      "modelo": "livros",
+      "x": 5.3,
+      "y": 4.6,
+      "w": 0.6,
+      "d": 0.6
+    },
+    {
+      "id": "chinelos",
+      "modelo": "chinelos",
+      "x": 4.2,
+      "y": 7.6,
+      "w": 0.6,
+      "d": 0.4,
+      "chao": true
+    },
+    {
+      "id": "caminha-gato",
+      "modelo": "caminha_gato",
+      "x": 5.6,
+      "y": 7.6,
+      "w": 1,
+      "d": 1,
+      "gato": "dormir"
+    },
+    {
+      "id": "caixa-areia",
+      "modelo": "caixa_areia",
+      "x": 0.2,
+      "y": 6.2,
+      "w": 1,
+      "d": 1,
+      "gato": "areia"
+    },
+    {
+      "id": "potes-gato",
+      "modelo": "potes_gato",
+      "x": 8.4,
+      "y": 3.6,
+      "w": 0.8,
+      "d": 0.5,
+      "gato": "comer"
+    },
+    {
+      "id": "arranhador",
+      "modelo": "arranhador",
+      "x": 6.9,
+      "y": 6.6,
+      "w": 0.8,
+      "d": 0.8,
+      "gato": "arranhar"
+    },
+    {
+      "id": "fogao",
+      "modelo": "fogao",
+      "x": 9,
+      "y": 0.1,
+      "w": 1,
+      "d": 1,
+      "uso": [
+        {
+          "x": 9.5,
+          "y": 1.6,
+          "pose": "parada",
+          "dir": "ne"
+        }
+      ]
+    },
+    {
+      "id": "pia",
+      "modelo": "pia",
+      "x": 11.8,
+      "y": 0.1,
+      "w": 1.2,
+      "d": 1
+    },
+    {
+      "id": "bancada",
+      "modelo": "bancada",
+      "x": 10,
+      "y": 0.1,
+      "w": 1.8,
+      "d": 1
+    },
+    {
+      "id": "cafeteira",
+      "modelo": "cafeteira",
+      "x": 10.2,
+      "y": 0.3,
+      "w": 0.4,
+      "d": 0.4,
+      "z": 16,
+      "solto": true
+    },
+    {
+      "id": "micro-ondas",
+      "modelo": "micro_ondas",
+      "x": 10.9,
+      "y": 0.2,
+      "w": 0.7,
+      "d": 0.5,
+      "z": 16,
+      "solto": true
+    },
+    {
+      "id": "luz-armario",
+      "modelo": "luz_armario",
+      "x": 9,
+      "y": 0.05,
+      "w": 4,
+      "d": 0.2,
+      "z": 34,
+      "parede": "n",
+      "solto": true,
+      "luz": {
+        "cor": "#ffcf8a",
+        "raio": 50,
+        "auto": "cozinha"
+      }
+    },
+    {
+      "id": "prateleira",
+      "modelo": "prateleira",
+      "x": 9.1,
+      "y": 0.05,
+      "w": 2.5,
+      "d": 0.3,
+      "z": 46,
+      "parede": "n",
+      "solto": true
+    },
+    {
+      "id": "geladeira",
+      "modelo": "geladeira",
+      "x": 13,
+      "y": 0.1,
+      "w": 0.9,
+      "d": 1,
+      "inventario": true,
+      "uso": [
+        {
+          "x": 12.6,
+          "y": 1.6,
+          "pose": "parada",
+          "dir": "ne"
+        }
+      ]
+    },
+    {
+      "id": "mesa-jantar",
+      "modelo": "mesa_jantar",
+      "x": 10,
+      "y": 2.5,
+      "w": 2,
+      "d": 1.4,
+      "uso": [
+        {
+          "x": 10.6,
+          "y": 4.2,
+          "pose": "sentada",
+          "dir": "ne"
+        }
+      ]
+    },
+    {
+      "id": "pendente",
+      "modelo": "pendente",
+      "x": 10.8,
+      "y": 3,
+      "w": 0.5,
+      "d": 0.5,
+      "z": 70,
+      "solto": true,
+      "luz": {
+        "cor": "#ffc27a",
+        "raio": 80,
+        "auto": "cozinha"
+      }
+    },
+    {
+      "id": "lixeira",
+      "modelo": "lixeira",
+      "x": 13.2,
+      "y": 3.9,
+      "w": 0.5,
+      "d": 0.5
+    },
+    {
+      "id": "planta-cozinha",
+      "modelo": "planta_pequena",
+      "x": 8.3,
+      "y": 0.3,
+      "w": 0.5,
+      "d": 0.5
+    },
+    {
+      "id": "cama",
+      "modelo": "cama",
+      "x": 11.7,
+      "y": 5.1,
+      "w": 2.1,
+      "d": 1.8,
+      "uso": [
+        {
+          "x": 12.75,
+          "y": 6.0,
+          "pose": "deitada"
+        }
+      ]
+    },
+    {
+      "id": "criado-1",
+      "modelo": "criado",
+      "x": 11.0,
+      "y": 5.1,
+      "w": 0.6,
+      "d": 0.6
+    },
+    {
+      "id": "abajur-quarto",
+      "modelo": "abajur_mesa",
+      "x": 11.1,
+      "y": 5.2,
+      "w": 0.4,
+      "d": 0.4,
+      "z": 14,
+      "solto": true,
+      "luz": {
+        "cor": "#ffbf73",
+        "raio": 70,
+        "auto": "quarto"
+      }
+    },
+    {
+      "id": "guarda-roupa",
+      "modelo": "guarda_roupa",
+      "x": 9.0,
+      "y": 5.1,
+      "w": 1.6,
+      "d": 0.8,
+      "inventario": true
+    },
+    {
+      "id": "poltrona",
+      "modelo": "poltrona",
+      "x": 9.0,
+      "y": 8.3,
+      "w": 1,
+      "d": 1,
+      "uso": [
+        {
+          "x": 9.5,
+          "y": 8.8,
+          "pose": "sentada"
+        }
+      ]
+    },
+    {
+      "id": "luminaria-leitura",
+      "modelo": "luminaria_leitura",
+      "x": 10.1,
+      "y": 8.4,
+      "w": 0.4,
+      "d": 0.4,
+      "luz": {
+        "cor": "#ffd28c",
+        "raio": 60,
+        "auto": "leitura"
+      }
+    },
+    {
+      "id": "comoda",
+      "modelo": "comoda",
+      "x": 10.3,
+      "y": 9.2,
+      "w": 0.8,
+      "d": 0.7
+    },
+    {
+      "id": "tapete-quarto",
+      "modelo": "tapete_redondo",
+      "x": 9.4,
+      "y": 7.2,
+      "w": 1.4,
+      "d": 1.4,
+      "chao": true
+    },
+    {
+      "id": "planta-quarto",
+      "modelo": "planta_grande",
+      "x": 8.2,
+      "y": 9.2,
+      "w": 0.7,
+      "d": 0.7
+    },
+    {
+      "id": "banheira",
+      "modelo": "banheira",
+      "x": 12.2,
+      "y": 7.3,
+      "w": 1.6,
+      "d": 1,
+      "uso": [
+        {
+          "x": 12.5,
+          "y": 8.5,
+          "pose": "privada"
+        }
+      ]
+    },
+    {
+      "id": "vaso",
+      "modelo": "vaso_sanitario",
+      "x": 13.2,
+      "y": 8.9,
+      "w": 0.6,
+      "d": 0.6
+    },
+    {
+      "id": "pia-banheiro",
+      "modelo": "pia_banheiro",
+      "x": 11.3,
+      "y": 9.2,
+      "w": 0.8,
+      "d": 0.6
+    },
+    {
+      "id": "poste-1",
+      "modelo": "poste",
+      "x": 5.6,
+      "y": 11.2,
+      "w": 0.4,
+      "d": 0.4,
+      "fora": true,
+      "luz": {
+        "cor": "#ffcf7a",
+        "raio": 120,
+        "auto": "rua",
+        "altura": 44
+      }
+    },
+    {
+      "id": "poste-2",
+      "modelo": "poste",
+      "x": 15.2,
+      "y": 3.4,
+      "w": 0.4,
+      "d": 0.4,
+      "fora": true,
+      "luz": {
+        "cor": "#ffcf7a",
+        "raio": 120,
+        "auto": "rua",
+        "altura": 44
+      }
+    },
+    {
+      "id": "poste-3",
+      "modelo": "poste",
+      "x": 15.3,
+      "y": 11.4,
+      "w": 0.4,
+      "d": 0.4,
+      "fora": true,
+      "luz": {
+        "cor": "#ffcf7a",
+        "raio": 120,
+        "auto": "rua",
+        "altura": 44
+      }
+    },
+    {
+      "id": "arvore-1",
+      "modelo": "arvore",
+      "x": 9.4,
+      "y": 10.9,
+      "w": 0.8,
+      "d": 0.8,
+      "fora": true
+    },
+    {
+      "id": "arvore-2",
+      "modelo": "arvore",
+      "x": 14.9,
+      "y": 7.6,
+      "w": 0.8,
+      "d": 0.8,
+      "fora": true
+    },
+    {
+      "id": "arvore-3",
+      "modelo": "arvore",
+      "x": 1.0,
+      "y": 10.9,
+      "w": 0.8,
+      "d": 0.8,
+      "fora": true
+    },
+    {
+      "id": "banco-rua",
+      "modelo": "banco",
+      "x": 12.2,
+      "y": 10.8,
+      "w": 1.2,
+      "d": 0.5,
+      "fora": true
+    },
+    {
+      "id": "hidrante",
+      "modelo": "hidrante",
+      "x": 14.6,
+      "y": 10.4,
+      "w": 0.3,
+      "d": 0.3,
+      "fora": true
+    },
+    {
+      "id": "capacho",
+      "modelo": "capacho",
+      "x": 3,
+      "y": 10.05,
+      "w": 1,
+      "d": 0.6,
+      "fora": true,
+      "chao": true
+    }
+  ],
+  "pontos": {
+    "porta": {
+      "x": 3.5,
+      "y": 9.5
+    },
+    "janela": {
+      "x": 3.8,
+      "y": 1.2
+    },
+    "gato": {
+      "dormir": [
+        {
+          "x": 6.1,
+          "y": 8.1
+        },
+        {
+          "x": 3.2,
+          "y": 4.4
+        },
+        {
+          "x": 12.3,
+          "y": 6.3
+        }
+      ],
+      "janela": [
+        {
+          "x": 0.9,
+          "y": 6.6
+        }
+      ],
+      "andar": [
+        {
+          "x": 4,
+          "y": 2
+        },
+        {
+          "x": 7,
+          "y": 7
+        },
+        {
+          "x": 2,
+          "y": 8.5
+        }
+      ]
+    },
+    "banheiro": {
+      "x": 10.6,
+      "y": 8.5
+    },
+    "fora": {
+      "x": 3.5,
+      "y": 11.0
+    }
+  },
+  "exterior": {
+    "area": [
+      -6,
+      -6,
+      22,
+      19
+    ],
+    "calcada": 2,
+    "rua": 4,
+    "fundo": "tijolo"
+  }
+}
