@@ -196,6 +196,11 @@ function painelLer(tela, estado) {
       { id: 'gatos', nome: 'Gatos', det: 'vida real · entrega 1', entrega: 1, ligado: true }] };
     case 'pedidos': return { pedidos: v(S.pedidos, []) };
     case 'registros': return { falhas: [], registro: v([{ hora: '13:05', texto: 'conversa', det: 'Pepper', usd: 0.01 }, { hora: '13:10', texto: 'ciclo do motor', usd: 0.02 }], []) };
+    // O WhatsApp e o mundo real (DEC-144), com dados inventados.
+    case 'whatsapp': return { tem_evolution: true, numeros: [{ pessoa_id: 'pepper', nome: 'Pepper', numero: '5541900000000', estado: 'conectado', dias: 12 }, { pessoa_id: 'hermione', nome: 'Hermione', numero: null, estado: 'sem_numero', dias: null }],
+      funil: v([{ id: 2, o_que: 'padarias', cidade: 'Cidade Exemplo', na_fila: 4, contatados: 6, responderam: 3, interessados: 1, fechados: 0 }], []),
+      fios: v([{ id: 7, com: 'Marta', relacao: 'mãe', tipo: 'recado', objetivo: 'avisar que ele chega amanhã', estado: 'respondeu', resumo: 'vai fazer almoço quando ele chegar' },
+        { id: 12, com: 'Serralheria Exemplo', relacao: 'fornecedor', tipo: 'orcamento', objetivo: 'conserto do portão', estado: 'respondeu', resumo: 'R$ 150, amanhã' }], []) };
     case 'sistema': return { servicos: [['Servidor', 'no ar'], ['OpenAI', 'no ar'], ['Cotações (Yahoo Finance)', 'no ar'], ['Notícias (RSS)', 'no ar'], ['Clima e câmbio', 'no ar'],
       ['Relógio do trabalho', 'último ciclo 13:11'], ['Relógio da vida', 'último ciclo 13:10'], ['Backup', 'hoje, 03:00']].map(([nome, e]) => ({ nome, estado: e })) };
     default: return {};
@@ -212,6 +217,9 @@ function painel(tela, c, estado) {
     return { hoje: '2026-11-23', mulheres: [{ quem: 'pessoa:pepper', nome: 'Pepper', hoje: { fase: 'fertil', fase_nome: 'fértil', dia: 12, duracao: 29, sinais: ['com energia boa'], proxima: '2026-12-11' },
       meses: [mes(2026, 11), mes(2026, 12), mes(2027, 1), mes(2027, 2)] }, { quem: 'personagem:Morgan', nome: 'Morgan', hoje: null, meses: [] }] };
   }
+  if (tela === 'whatsapp' && c.acao === 'fio') return { conversa: [{ autor: 'pessoa', texto: 'oi, aqui é a Virginia, trabalho com o Jean. ele chega amanhã!', saiu: true }, { autor: 'terceiro', texto: 'que bom! vou fazer almoço', saiu: true }] };
+  if (tela === 'whatsapp' && ['conectar', 'trocar', 'qr'].includes(c.acao)) return { pessoa_id: c.pessoa_id, estado: 'esperando_qr', qr: '' };
+  if (tela === 'whatsapp') return {};
   if (tela === 'sistema' && c.acao === 'whatsapp') return { canal: c.canal || 'whatsapp', estado: 'conectado', url: c.url || 'https://evolution.exemplo.com', numero: c.numero || '5541900000000', instancia: 'pepper',
     segredo: '0a1b2c3d4e5f', webhook: 'https://<o endereço do n8n>/webhook/central/whatsapp' };
   if (tela === 'mundo' && c.acao === 'variedade') return { assuntos: 11, assuntos_antes: 13, repetidas: 2, arcos: 2, novidade: false };

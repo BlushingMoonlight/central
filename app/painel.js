@@ -1,6 +1,6 @@
 // Central — o Painel do Jean (PJ0 a PJ13, só os da entrega 1). Entra-se pelos Ajustes, sem segunda senha (DEC-116).
 // Cada tela chama painel/<tela> com {acao:'ler'} e as ações da tela.
-import { chamar, hojeIso } from './api.js';
+import { chamar, hojeIso, endereco } from './api.js';
 import { esc, data, item, lista, botao, acoes, campo, vazio, editor, dolares, porcento, aoTocar, comEditor, comConfirmacao, marcarErro } from './ui.js';
 
 const painel = (tela, acao = 'ler', extra = {}) => chamar('painel/' + tela, { acao, ...extra });
@@ -301,10 +301,70 @@ function ondeFala(w) {
     + acoes(botao('Mudar onde ela fala', { leve: true, attrs: ' data-editor="ed-wa" data-wa' }));
 }
 
+// WhatsApp (DEC-144): o número de cada pessoa, conectado pelo app (o QR aparece aqui); as conversas dela com terceiros e o
+// funil da prospecção, só para olhar. Tudo o que ela faz fora, o Jean pede na conversa.
+const ESTADO_NUM = { conectado: 'conectado', caiu: 'caiu', esperando_qr: 'esperando o QR', desligado: 'desconectado', sem_numero: 'sem número' };
+const TIPO_FIO = { recado: 'recado', conversa: 'conversa', orcamento: 'orçamento', prospeccao: 'prospecção', parabens: 'agendado' };
+function numerosWa(h) {
+  if (!h) return '';
+  const linha = (n) => {
+    const tem = ['conectado', 'caiu', 'esperando_qr'].includes(n.estado);
+    const det = [ESTADO_NUM[n.estado] || n.estado, n.numero ? '+' + n.numero : '', n.dias != null ? n.dias + (n.dias === 1 ? ' dia de uso' : ' dias de uso') : ''].filter(Boolean).join(' · ');
+    const b = (t, k, extra = {}) => botao(t, { leve: true, ...extra, attrs: ` data-wa-${k}="${esc(n.pessoa_id)}"` });
+    return item(esc(n.nome), { det: esc(det), cls: 'item--coluna' + (n.estado === 'caiu' ? ' item--vencido' : ''),
+      acao: acoes(tem ? b('Trocar número', 'trocar') : b('Conectar número', 'conectar'), tem ? b('Desconectar', 'desconectar', { perigo: true }) : '', n.estado !== 'sem_numero' ? b('Excluir', 'excluir', { perigo: true }) : '') });
+  };
+  return '<h2>WhatsApp</h2>' + (h.tem_evolution ? '' : '<p class="texto-2">Preencha o endereço da Evolution em "Onde ela fala" antes de conectar.</p>')
+    + lista(...(h.numeros || []).map(linha)) + '<div data-wa-qr></div>'
+    + '<p class="pequeno">Só a Pepper responde por enquanto. Cada número novo passa pelo aquecimento: uso de gente, por 1 a 2 semanas.</p>';
+}
+function foraHtml(h) {
+  if (!h) return '';
+  const f = (h.funil || []).map((p) => item(esc(p.o_que) + (p.cidade ? ' · ' + esc(p.cidade) : ''), { det: `${p.contatados} contatados · ${p.responderam} responderam · ${p.interessados} interessados · ${p.fechados} fechados` + (p.na_fila ? ` · ${p.na_fila} na fila` : '') }));
+  const c = (h.fios || []).map((x) => item(esc(x.com) + ' · ' + esc(TIPO_FIO[x.tipo] || x.tipo), { det: esc(x.resumo || x.ultima || x.objetivo) + ' · ' + esc(x.estado), cls: 'item--coluna',
+    acao: acoes(botao('Ver a conversa', { leve: true, attrs: ` data-fio="${Number(x.id)}"` })) }));
+  return (f.length ? '<h2>Prospecção</h2>' + lista(...f) : '')
+    + '<h2>Conversas com outras pessoas</h2>' + (c.length ? lista(...c) + '<div data-fio-aberto></div>' : '<p class="texto-2">Nenhuma ainda. É só pedir a ela na conversa.</p>');
+}
+function ligarWa(raiz, ctx) {
+  const lugar = () => raiz.querySelector('[data-wa-qr]');
+  const erroEm = (e) => { const l = lugar(); if (l) l.innerHTML = '<div class="aviso aviso--erro" role="alert">' + esc(e.message || 'Não deu certo. Tente de novo.') + '</div>'; };
+  // O QR se atualiza a cada 4 segundos, até conectar (ou por 3 minutos).
+  const mostrarQr = (pessoa_id, r) => {
+    const l = lugar(); if (!l) return;
+    if (r.estado === 'conectado') { l.innerHTML = '<div class="aviso aviso--certo">Conectado.</div>'; ctx.recarregar(); return; }
+    l.innerHTML = (r.qr ? `<img class="qr" src="${esc(r.qr)}" alt="QR Code do WhatsApp">` : '<p class="texto-2">Gerando o QR…</p>')
+      + '<p class="texto-2">No celular do chip: WhatsApp › Configurações › Aparelhos conectados › Conectar um aparelho, e aponte para o QR.</p>';
+    const fim = Date.now() + 180000;
+    const t = setInterval(async () => {
+      if (!raiz.isConnected || Date.now() > fim) { clearInterval(t); return; }
+      try { const n = await painel('whatsapp', 'qr', { pessoa_id });
+        if (n.estado === 'conectado') { clearInterval(t); mostrarQr(pessoa_id, n); }
+        else if (n.qr) { const img = raiz.querySelector('[data-wa-qr] .qr'); if (img) img.src = n.qr; else mostrarQr(pessoa_id, n); } }
+      catch (e) { /* a próxima tentativa resolve */ }
+    }, 4000);
+  };
+  for (const acao of ['conectar', 'trocar']) aoTocar(raiz, `[data-wa-${acao}]`, async (b) => {
+    const pessoa_id = b.getAttribute(`data-wa-${acao}`);
+    try { mostrarQr(pessoa_id, await painel('whatsapp', acao, { pessoa_id, webhook_base: endereco() })); } catch (e) { erroEm(e); }
+  });
+  for (const acao of ['desconectar', 'excluir']) comConfirmacao(raiz, `[data-wa-${acao}]`, async (b) => {
+    try { await painel('whatsapp', acao, { pessoa_id: b.getAttribute(`data-wa-${acao}`), confirmado: true }); ctx.recarregar(); } catch (e) { erroEm(e); }
+  });
+  aoTocar(raiz, '[data-fio]', async (b) => {
+    const l = raiz.querySelector('[data-fio-aberto]'); if (!l) return;
+    try { const r = await painel('whatsapp', 'fio', { id: Number(b.getAttribute('data-fio')) });
+      l.innerHTML = '<h3>A conversa</h3>' + lista(...(r.conversa || []).map((m) => item(m.autor === 'pessoa' ? 'Pepper' : 'Do outro lado', { det: esc(m.texto) + (m.saiu ? '' : ' (ainda não saiu)') })));
+      l.scrollIntoView({ block: 'nearest' }); }
+    catch (e) { l.innerHTML = '<div class="aviso aviso--erro" role="alert">' + esc(e.message || 'Não deu certo. Tente de novo.') + '</div>'; }
+  });
+}
+
 const PJ13 = {
   ...P, titulo: 'Sistema',
-  carregar: async () => { const d = await painel('sistema'); try { d.wa = await painel('sistema', 'whatsapp'); } catch (e) { d.wa = null; } return d; },
-  corpo: (d) => ondeFala(d.wa) + lista(...(d.servicos || []).map((s) => item(esc(s.nome), { det: esc(s.estado), cls: s.estado === 'fora' ? 'item--vencido' : '' })))
+  carregar: async () => { const d = await painel('sistema'); try { d.wa = await painel('sistema', 'whatsapp'); } catch (e) { d.wa = null; }
+    try { d.wh = await painel('whatsapp'); } catch (e) { d.wh = null; } return d; },
+  corpo: (d) => ondeFala(d.wa) + numerosWa(d.wh) + foraHtml(d.wh) + '<h2>Serviços</h2>' + lista(...(d.servicos || []).map((s) => item(esc(s.nome), { det: esc(s.estado), cls: s.estado === 'fora' ? 'item--vencido' : '' })))
     + acoes(botao('Fazer backup agora', { principal: true, attrs: ' data-backup' }))
     + '<h2>Testes de personalidade</h2>' + ((d.testes || []).length
       ? lista(...d.testes.map((t) => item(esc(t.nome), { det: esc(t.det), cls: t.passou ? '' : 'item--vencido' })))
@@ -318,6 +378,7 @@ const PJ13 = {
       catch (e) { marcarErro(raiz, 'wu', e.message || 'Não deu certo. Tente de novo.'); }
     });
     aoTocar(raiz, '[data-testes]', async () => { await painel('sistema', 'rodar_testes', { pessoa_id: 'pepper' }); ctx.recarregar(); });
+    ligarWa(raiz, ctx);
   },
 };
 
