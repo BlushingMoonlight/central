@@ -3,6 +3,7 @@
 // Só as telas da entrega 1; as outras continuam só no protótipo (prototipo/).
 import { configurado, temSessao, jaEntrou, modoDemo } from './api.js';
 import { esc, CARREGANDO, ERRO } from './ui.js';
+import { lerRota } from './rota.js';
 import { mandarFila } from './fila.js';
 import conversa from './conversa.js';
 import captura from './captura.js';
@@ -55,10 +56,8 @@ async function mostrar() {
   const g = ++geracao;
   const html = document.documentElement;
   const raiz = document.getElementById('app');
-  // Separa pelas barras antes de decodificar: o id de um item ("areas/casa/tarefas/x") vem codificado e fica inteiro (DEC-129).
-  const partes = location.hash.slice(1).split('/').map((p) => { try { return decodeURIComponent(p); } catch (e) { return p; } });
-  const cod = TELAS[partes[0]] ? partes[0] : 'CV';
-  const args = partes.slice(1);
+  // O código da tela e um id só, com barras ou não (app/rota.js, DEC-140).
+  const { cod, args } = lerRota(location.hash, TELAS);
   const t = TELAS[cod];
   html.dataset.tela = cod;
   html.dataset.fase = 'carregando';
