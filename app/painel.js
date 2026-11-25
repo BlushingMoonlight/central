@@ -364,7 +364,7 @@ const PJ13 = {
   ...P, titulo: 'Sistema',
   carregar: async () => { const d = await painel('sistema'); try { d.wa = await painel('sistema', 'whatsapp'); } catch (e) { d.wa = null; }
     try { d.wh = await painel('whatsapp'); } catch (e) { d.wh = null; } return d; },
-  corpo: (d) => ondeFala(d.wa) + numerosWa(d.wh) + foraHtml(d.wh) + '<h2>Serviços</h2>' + lista(...(d.servicos || []).map((s) => item(esc(s.nome), { det: esc(s.estado), cls: s.estado === 'fora' ? 'item--vencido' : '' })))
+  corpo: (d) => ondeFala(d.wa) + numerosWa(d.wh) + foraHtml(d.wh) + '<h2>Serviços</h2>' + lista(...(d.servicos || []).map((s) => item(esc(s.nome), { det: esc(s.estado), cls: /^fora/.test(s.estado) ? 'item--vencido' : '' })))
     + acoes(botao('Fazer backup agora', { principal: true, attrs: ' data-backup' }))
     + '<h2>Testes de personalidade</h2>' + ((d.testes || []).length
       ? lista(...d.testes.map((t) => item(esc(t.nome), { det: esc(t.det), cls: t.passou ? '' : 'item--vencido' })))

@@ -84,11 +84,37 @@ function painel(tela, d) {
       return Object.assign({}, d, { servicos: [
         { nome: 'Relógio da vida', estado: !rel.ultimo_ciclo ? 'ainda não rodou' : parado ? 'fora' : 'último ciclo ' + quando(rel.ultimo_ciclo) + (rel.erro ? ' · só no código' : '') },
         ...Object.entries(saude.fontes || {}).map(([k, x]) => ({ nome: NOMES[k] || k, estado: x.ok ? 'no ar' : 'fora' + (x.erro ? ' (' + x.erro + ')' : '') })),
-        { nome: 'Backup', estado: b ? (b.ok ? 'feito ' + quando(b.feito_em) : 'fora') : 'nenhum ainda' }],
+        { nome: 'Backup', estado: b ? (b.ok ? 'feito ' + quando(b.feito_em) : 'fora') : 'nenhum ainda' },
+        ...saudeCentral(d.estado)],
         testes: testes.map((t) => ({ nome: t.teste, passou: t.passou, det: (t.passou ? 'passou' : 'não passou') + (t.motivo ? ': ' + t.motivo : '') + ' · ' + quando(t.rodada_em) })) });
     }
     default: return d;
   }
+}
+
+// A saúde da Central (DEC-178, o 07 a cada 15 minutos e o 98 toda segunda): linhas a mais na lista de Serviços.
+function saudeCentral(estado) {
+  const valor = (k) => ((estado || []).find((e) => e.chave === k) || {}).valor;
+  const s = valor('saude_central'); const rel = valor('relatorio_semanal'); const out = [];
+  const usd = (v) => 'US$ ' + Number(v || 0).toFixed(2);
+  if (s) {
+    for (const a of s.alertas || []) out.push({ nome: 'Alerta', estado: 'fora (' + a.texto + ')' });
+    const c = s.custo || {}; const l = s.latencia_s || {}; const r68 = s.rodada_68_ms || {};
+    const erros = Object.values(s.erros_24h || {}).reduce((a, n) => a + Number(n), 0);
+    out.push({ nome: 'Custo de hoje', estado: `${usd(c.hoje)} de ${usd(c.orcamento_dia)} · última hora ${usd(c.ultima_hora)}` },
+      { nome: 'Resposta dela', estado: l.respostas ? `em média ${l.media} s (9 de 10 em até ${l.p90} s)` : 'sem conversa nas últimas 24 horas' },
+      { nome: 'Mensagens espontâneas', estado: `${s.espontaneas_1h || 0} na última hora` },
+      { nome: 'Erros', estado: erros ? `${erros} nas últimas 24 horas` : 'nenhum nas últimas 24 horas' },
+      { nome: 'Rodada do jogo', estado: r68.rodadas ? `${Math.round(r68.p50 / 100) / 10} s (a mais lenta: ${Math.round(r68.max / 100) / 10} s)` : 'sem medida ainda' },
+      { nome: 'Banco', estado: `${s.banco_mb} MB` });
+  }
+  if (rel) {
+    const n = (rel.notas || [])[0]; const b = rel.bateria || {}; const g = rel.sinais || {};
+    out.push({ nome: 'Semana', estado: (rel.caiu && rel.caiu.length ? 'fora (' + rel.caiu.join('; ') + ')' : 'ok')
+      + (n != null ? ` · nota ${Number(n).toFixed(1)}` : '') + (b.total ? ` · testes ${b.passou}/${b.total}` : '')
+      + (g.respostas ? ` · ele riu ou gostou de ${g.reagiu_bem} de ${g.respostas} respostas` : '') });
+  }
+  return out;
 }
 
 export function adaptar(caminho, corpo, d) {
