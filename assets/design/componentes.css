@@ -122,6 +122,28 @@ p + p { margin-top: var(--esp-2); }
 /* App (PWA) */
 [hidden] { display: none !important; }
 .segurar { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; }
+/* O jogo (DEC-149, DEC-173): tela cheia; na tela, só o chip de hora e humor e o celular, dentro das áreas seguras. */
+.jogo { position: fixed; inset: 0; background: var(--jogo-fundo); overflow: hidden; touch-action: none; color: var(--jogo-texto); }
+.jogo__mundo { position: absolute; inset: 0; }
+.jogo__mundo canvas { image-rendering: pixelated; }
+.jogo__chip, .jogo__celular { position: absolute; min-width: var(--alvo-secao); min-height: var(--alvo-secao); background: var(--jogo-janela); color: var(--jogo-texto);
+  border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pequeno); font: var(--peso-forte) var(--texto-16) ui-monospace, monospace; }
+.jogo__chip { top: calc(env(safe-area-inset-top) + var(--esp-2)); left: calc(env(safe-area-inset-left) + var(--esp-2)); display: flex; align-items: center; gap: var(--esp-2); padding: 0 var(--esp-3); }
+.jogo__humor { width: var(--esp-3); height: var(--esp-3); border-radius: 50%; background: var(--jogo-meio); }
+.jogo__humor.humor--bem { background: var(--jogo-bem); }
+.jogo__humor.humor--mal { background: var(--jogo-mal); }
+.jogo__celular { bottom: calc(env(safe-area-inset-bottom) + var(--esp-2)); right: calc(env(safe-area-inset-right) + var(--esp-2)); width: var(--alvo-secao); }
+.jogo__celular-tela { display: block; width: var(--esp-4); height: var(--esp-5); margin: 0 auto; border: var(--jogo-linha) solid var(--jogo-texto); border-radius: var(--esp-1); }
+.jogo__folha { position: absolute; left: 0; right: 0; bottom: 0; max-height: 80%; overflow-y: auto; background: var(--jogo-janela); border-top: var(--jogo-linha) solid var(--jogo-borda);
+  padding: var(--esp-3) max(var(--esp-4), env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + var(--esp-3)) max(var(--esp-4), env(safe-area-inset-left)); }
+@media (orientation: landscape) { .jogo__folha { left: auto; top: 0; width: min(55%, var(--largura-passo)); max-height: none; border-top: 0; border-left: var(--jogo-linha) solid var(--jogo-borda); } }
+.jogo__titulo { font: var(--peso-forte) var(--texto-17) ui-monospace, monospace; color: var(--jogo-borda); margin-bottom: var(--esp-2); }
+.jogo__texto { font: var(--texto-16) ui-monospace, monospace; color: var(--jogo-texto); margin: var(--esp-1) 0; }
+.jogo__texto2 { font: var(--texto-15) ui-monospace, monospace; color: var(--jogo-texto-2); margin: var(--esp-1) 0; }
+.jogo__linha { display: block; width: 100%; min-height: var(--alvo-secao); text-align: left; background: none; color: var(--jogo-texto); border: 0;
+  border-bottom: var(--linha-fina) solid var(--jogo-texto-2); font: var(--texto-16) ui-monospace, monospace; padding: 0 var(--esp-2); }
+.jogo__linha:focus-visible, .jogo__chip:focus-visible, .jogo__celular:focus-visible { outline: var(--jogo-linha) solid var(--jogo-borda); outline-offset: var(--esp-1); }
+.jogo .carregando, .jogo .aviso { position: absolute; top: 40%; left: var(--esp-4); right: var(--esp-4); }
 /* O WhatsApp no Painel (DEC-144): a linha com botões embaixo e o QR Code. */
 .item--coluna { flex-wrap: wrap; }
 .item--coluna > .acoes { width: 100%; }

@@ -14,8 +14,9 @@ import financas from './financas.js';
 import pessoas from './pessoas.js';
 import ajustes from './ajustes.js';
 import painel from './painel.js';
+import jogo from './jogo.js';
 
-const TELAS = { ...conversa, ...captura, ...entrada, ...vida, ...agenda, ...financas, ...pessoas, ...ajustes, ...painel };
+const TELAS = { ...conversa, ...captura, ...entrada, ...vida, ...agenda, ...financas, ...pessoas, ...ajustes, ...painel, ...jogo };
 const SECOES = [['CV', 'Conversa'], ['VI0', 'Vida'], ['AG0', 'Agenda'], ['FI0', 'Finanças'], ['PE1', 'Pessoas']];
 
 try { const m = localStorage.getItem('central-modo'); if (m) document.documentElement.dataset.theme = m; } catch (e) { /* segue o aparelho */ }
@@ -27,6 +28,8 @@ const valor = (v, ...a) => (typeof v === 'function' ? v(...a) : v);
 
 function quadro(t, d, args, conteudo) {
   const tipo = t.tipo;
+  // O jogo é tela cheia, sem topo nem seções (DEC-149); carregando ou com erro, mostra o aviso e a saída.
+  if (tipo === 'jogo') return `<div class="jogo">${conteudo === CARREGANDO || conteudo === ERRO ? conteudo + '<a class="jogo__chip" href="#AJ0">Sair</a>' : conteudo}</div>`;
   const titulo = esc(valor(t.titulo, d, args));
   let esq = '';
   if (tipo === 'primeiro') esq = '<a href="#AJ0">Ajustes</a>';

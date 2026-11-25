@@ -1,9 +1,9 @@
 // Central — service worker. Guarda o "shell" do app (HTML, CSS, JS, ícones) para abrir sem internet, sempre buscando
 // primeiro na rede. NUNCA guarda as respostas da API (que são POST, em outro endereço). Recebe o push e abre a Conversa.
-const CACHE = 'central-shell-4';
+const CACHE = 'central-shell-5';
 const SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'assets/design/tokens.css', 'assets/design/componentes.css',
   'app/main.js', 'app/rota.js', 'app/api.js', 'app/adaptar.js', 'app/ui.js', 'app/fila.js', 'app/midia.js', 'app/conversa.js', 'app/captura.js', 'app/entrada.js',
-  'app/vida.js', 'app/agenda.js', 'app/financas.js', 'app/pessoas.js', 'app/ajustes.js', 'app/painel.js',
+  'app/vida.js', 'app/agenda.js', 'app/financas.js', 'app/pessoas.js', 'app/ajustes.js', 'app/painel.js', 'app/jogo.js',
   'app/icones/icone.svg', 'app/icones/icone-192.png'];
 
 self.addEventListener('install', (e) => {
