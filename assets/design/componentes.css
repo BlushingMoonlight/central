@@ -165,3 +165,33 @@ p + p { margin-top: var(--esp-2); }
 .item--coluna { flex-wrap: wrap; }
 .item--coluna > .acoes { width: 100%; }
 .qr { display: block; width: 60%; margin: var(--esp-3) auto; }
+/* O jogo, entrega 3 (DEC-176): o celular com as 8 abas, o construtor, os controles na tela, a apresentação e o "reconectando" */
+.jogo__folha--celular { top: 0; max-height: none; }
+@media (orientation: landscape) { .jogo__folha--celular { left: auto; width: min(60%, var(--largura-passo)); border-top: 0; border-left: var(--jogo-linha) solid var(--jogo-borda); } }
+.jogo__folha--celular.jogo__folha--lado { left: auto; width: min(60%, var(--largura-passo)); border-top: 0; border-left: var(--jogo-linha) solid var(--jogo-borda); }
+.jogo__cabeca { display: flex; gap: var(--esp-3); align-items: center; padding-top: env(safe-area-inset-top); }
+.jogo__retrato { flex: none; width: var(--alvo-secao); height: var(--alvo-secao); background: var(--jogo-sel); color: var(--jogo-borda); border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pequeno); font: var(--peso-forte) var(--texto-17) ui-monospace, monospace; }
+.jogo__abas { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--esp-1); margin: var(--esp-2) 0; }
+.jogo__aba { min-height: var(--alvo-secao); background: var(--jogo-sel); color: var(--jogo-texto); border: var(--linha-fina) solid var(--jogo-texto-2); border-radius: var(--raio-pequeno); font: var(--texto-15) ui-monospace, monospace; }
+.jogo__corpo { padding-bottom: var(--esp-2); }
+.jogo__linha--info { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--esp-2); }
+.jogo__barra--saudade i { background: var(--jogo-saudade); }
+.jogo__passos { color: var(--jogo-texto); font: var(--texto-15) ui-monospace, monospace; padding-left: var(--esp-4); }
+.jogo__passos li { margin: var(--esp-1) 0; }
+.jogo__passos code, .jogo__folha code { color: var(--jogo-borda); word-break: break-all; }
+.jogo__folha input, .jogo__folha select { min-height: var(--alvo-secao); background: var(--jogo-sel); color: var(--jogo-texto); border: var(--linha-fina) solid var(--jogo-texto-2); border-radius: var(--raio-pequeno); font: var(--texto-16) ui-monospace, monospace; padding: 0 var(--esp-2); }
+.jogo__construtor { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; max-height: 45%; overflow-y: auto; background: var(--jogo-janela); border-top: var(--jogo-linha) solid var(--jogo-borda); padding: var(--esp-2) var(--esp-3) calc(env(safe-area-inset-bottom) + var(--esp-2)); }
+.jogo__opcoes, .jogo__ferramentas { display: flex; flex-wrap: wrap; gap: var(--esp-1); margin: var(--esp-1) 0; }
+.jogo__quebra { flex-basis: 100%; }
+.jogo__joy { position: absolute; z-index: 2; width: var(--alvo-secao); height: var(--alvo-secao); margin: calc(var(--alvo-secao) / -2) 0 0 calc(var(--alvo-secao) / -2); border: var(--jogo-linha) solid var(--jogo-texto-2); border-radius: 50%; opacity: 0.7; pointer-events: none; }
+.jogo__joy-botao { position: absolute; inset: 25%; border-radius: 50%; background: var(--jogo-texto); }
+.jogo__acao { position: absolute; z-index: 2; min-height: var(--alvo-secao); min-width: var(--alvo-secao); transform: translate(-50%, -100%); background: var(--jogo-janela); color: var(--jogo-texto); border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pequeno); font: var(--texto-15) ui-monospace, monospace; padding: 0 var(--esp-3); }
+.jogo__offline { position: absolute; z-index: 4; top: calc(env(safe-area-inset-top) + var(--esp-2)); right: calc(env(safe-area-inset-right) + var(--esp-2)); background: var(--jogo-janela); color: var(--jogo-meio); border: var(--jogo-linha) solid var(--jogo-meio); border-radius: var(--raio-pequeno); padding: var(--esp-2) var(--esp-3); font: var(--texto-15) ui-monospace, monospace; }
+.jogo__movendo { position: absolute; z-index: 3; bottom: calc(env(safe-area-inset-bottom) + var(--esp-2)); left: calc(env(safe-area-inset-left) + var(--esp-2)); display: flex; gap: var(--esp-2); }
+.jogo__botoes { position: absolute; z-index: 2; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + var(--alvo-secao) + var(--esp-3)); display: flex; justify-content: space-between; padding: 0 var(--esp-3); opacity: 0.75; pointer-events: none; }
+.jogo__botoes button { pointer-events: auto; }
+.jogo__dpad { display: grid; grid-template-columns: repeat(3, var(--alvo-secao)); grid-template-rows: repeat(3, var(--alvo-secao)); }
+.jogo__d-cima { grid-area: 1 / 2; } .jogo__d-esq { grid-area: 2 / 1; } .jogo__d-dir { grid-area: 2 / 3; } .jogo__d-baixo { grid-area: 3 / 2; }
+.jogo__ab { display: flex; align-items: flex-end; gap: var(--esp-2); }
+.jogo__intro { position: absolute; z-index: 5; left: var(--esp-4); right: var(--esp-4); bottom: calc(env(safe-area-inset-bottom) + var(--alvo-secao) + var(--esp-4)); max-width: var(--largura-passo); margin: 0 auto; background: var(--jogo-janela); border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pequeno); padding: var(--esp-3); }
+.jogo__celular--novo::after { content: ''; position: absolute; top: var(--esp-1); right: var(--esp-1); width: var(--esp-3); height: var(--esp-3); border-radius: 50%; background: var(--jogo-mal); }
