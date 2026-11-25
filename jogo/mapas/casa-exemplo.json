@@ -1,0 +1,144 @@
+{
+ "id": "casa-jean",
+ "versao": 1,
+ "nome": "Casa de exemplo",
+ "fuso": "America/Sao_Paulo",
+ "largura": 6,
+ "fundo": 5,
+ "comodos": [
+  {
+   "id": "sala",
+   "nome": "Sala",
+   "piso": "taco",
+   "area": [
+    0,
+    0,
+    6,
+    5
+   ]
+  }
+ ],
+ "paredes": [
+  {
+   "de": [
+    0,
+    0
+   ],
+   "para": [
+    6,
+    0
+   ],
+   "altura": "alta",
+   "cor": "verde"
+  },
+  {
+   "de": [
+    0,
+    0
+   ],
+   "para": [
+    0,
+    5
+   ],
+   "altura": "alta",
+   "cor": "verde"
+  },
+  {
+   "de": [
+    0,
+    5
+   ],
+   "para": [
+    6,
+    5
+   ],
+   "altura": "baixa",
+   "cor": "verde"
+  },
+  {
+   "de": [
+    6,
+    0
+   ],
+   "para": [
+    6,
+    5
+   ],
+   "altura": "baixa",
+   "cor": "verde"
+  }
+ ],
+ "aberturas": [
+  {
+   "tipo": "janela",
+   "em": [
+    2,
+    0
+   ],
+   "largura": 2,
+   "lado": "n"
+  },
+  {
+   "tipo": "porta",
+   "em": [
+    2,
+    5
+   ],
+   "largura": 1,
+   "lado": "n",
+   "saida": {
+    "mapa": "rua"
+   }
+  }
+ ],
+ "itens": [
+  {
+   "id": "sofa",
+   "modelo": "sofa",
+   "x": 1,
+   "y": 2,
+   "w": 3,
+   "d": 1,
+   "uso": [
+    {
+     "x": 2.5,
+     "y": 2.5,
+     "pose": "sentada"
+    }
+   ]
+  },
+  {
+   "id": "abajur-chao",
+   "modelo": "abajur_chao",
+   "x": 4.6,
+   "y": 1.2,
+   "w": 0.6,
+   "d": 0.6,
+   "luz": {
+    "cor": "#ffc27a",
+    "raio": 96
+   }
+  }
+ ],
+ "pontos": {
+  "porta": {
+   "x": 2.5,
+   "y": 4.5
+  },
+  "fora": {
+   "x": 2.5,
+   "y": 6.2
+  }
+ },
+ "exterior": {
+  "area": [
+   -5,
+   -5,
+   12,
+   11
+  ],
+  "calcada": 2,
+  "rua": 3,
+  "fundo": "grama"
+ }
+}

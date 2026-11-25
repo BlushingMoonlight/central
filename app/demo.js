@@ -253,24 +253,51 @@ const ATIVIDADES = [
   { atividade: 'dormindo', objeto: 'cama', pose: 'deitada', balao: 'zzz', humor: 'calma' },
 ];
 let mapaDemo = null; let jogoEstado = null;
+// Uma casa inventada para o Jean na demonstração (a de verdade fica só no banco privado, DEC-176).
+let CASA_JEAN_DEMO = null; // jogo/mapas/casa-exemplo.json
+const JEAN_DEMO = { aparencia: { pele: 1, cabelo: 'curto', cor_cabelo: 'castanho', barba: 'curta', camisa: 'azul', calca: 'jeans', sapato: 'branco' }, mapa_id: 'casa-jean', x: 2.5, y: 3.5, andar: 0,
+  viagem: null, voando: false, fora: null, esperando: false, visto: false, config: { camera: 'pepper', botoes: false, apresentacao: true } };
 // A demonstração responde às ações do jogo sem servidor, só para ver os menus funcionarem (o 68 decide de verdade).
 async function jogoDemo(c) {
   if (!mapaDemo) mapaDemo = await (await fetch('jogo/mapas/casa-pepper.json')).json();
+  if (!CASA_JEAN_DEMO) CASA_JEAN_DEMO = await (await fetch('jogo/mapas/casa-exemplo.json')).json();
   if (!jogoEstado) { const acesas = ['abajur-chao', 'luzinhas-sala', 'lava', 'aquario', 'pendente', 'abajur-quarto', 'monitor', 'luz-armario', 'poste-1', 'poste-2', 'poste-3'];
     jogoEstado = { itens: Object.fromEntries(mapaDemo.itens.filter((i) => i.luz).map((i) => [i.id, { ligada: acesas.includes(i.id), brilho: 85, cor: i.luz.cor }])),
       gato: { nome: 'Biscoito', acao: 'dormindo', saude: 96, idade: 4, necessidades: { fome: 70, sede: 75, sono: 80, diversao: 50, carinho: 60, higiene: 90, bexiga: 80, intestino: 85 } },
       casa: { louca: 2, lixo: 70, roupa: 3, arrumada: false, ambiente: 68, estoque: { petisco: 5 }, guardados: [] } };
     Object.assign(jogoEstado.itens, { 'caixa-areia': { sujeira: 65, quantidade: 60 }, 'potes-gato': { racao: 40, agua: 70 }, tv: { ligada: false, canal: 4, volume: 4 },
       geladeira: { inventario: { compartimentos: [{ nome: 'Prateleira de cima', capacidade: 8, itens: { Leite: 2, Ovos: 6 } }, { nome: 'Prateleira do meio', capacidade: 8, itens: { Frutas: 4 } }] } } }); }
-  const E = jogoEstado; let reacao = null;
+  const E = jogoEstado; let reacao = null; const J = JEAN_DEMO;
+  if (c.acao === 'jean') { const v = c.valor || {};
+    if (c.op === 'andar') { if (c.mapa !== J.mapa_id) return { ok: false, erro: 'Você não está nesse mapa.' }; Object.assign(J, { x: v.x, y: v.y, andar: v.andar || 0 }); }
+    else if (c.op === 'config') Object.assign(J.config, v); else if (c.op === 'aparencia') Object.assign(J.aparencia, v);
+    else if (c.op === 'viajar') { if (v.para === J.mapa_id) return { ok: false, erro: 'Você já está aí.' }; J.mapa_id = v.para; J.x = null; } }
+  if (c.acao === 'construir') { const v = c.valor || {}; const m = c.mapa === 'casa-jean' ? CASA_JEAN_DEMO : mapaDemo; if (v.base !== m.versao) return { ok: false, erro: 'O mapa mudou enquanto você construía. Abra o construtor de novo.' };
+    if (!v.mapa.aberturas.some((a) => a.saida)) return { ok: false, erro: 'A casa precisa de uma porta para a rua (marque uma porta como saída).' };
+    Object.assign(m, JSON.parse(JSON.stringify(v.mapa)), { versao: m.versao + 1 }); }
+  const naJean = c.mapa === 'casa-jean'; if (J.x === null) { const pt = (J.mapa_id === 'casa-jean' ? CASA_JEAN_DEMO : mapaDemo).pontos.porta; J.x = pt.x; J.y = pt.y; }
   if (c.acao === 'item') { const e = E.itens[c.item] = E.itens[c.item] || {};
     if (c.op === 'ligar' || c.op === 'desligar') { e.ligada = c.op === 'ligar'; reacao = 'ue'; } else if (c.op === 'brilho') e.brilho = c.valor; else if (c.op === 'cor') e.cor = c.valor;
     else if (c.op === 'canal') { e.canal = ((e.canal || 1) % 9) + 1; e.ligada = true; } else if (c.op === 'volume') e.volume = c.valor; else if (c.op === 'mudo') e.mudo = !e.mudo;
-    else if (c.op === 'limpar') e.sujeira = 0; else if (c.op === 'encher') { e.racao = 100; e.agua = 100; } else if (c.op === 'assistir_junto') return { ok: false, erro: 'Para assistir junto, o Jean precisa estar lá (na próxima entrega).' };
+    else if (c.op === 'limpar') e.sujeira = 0; else if (c.op === 'encher') { e.racao = 100; e.agua = 100; } else if (c.op === 'assistir_junto') return { ok: false, erro: 'Para assistir junto, você precisa estar lá, perto dela, com ela no sofá.' };
     if (c.item === 'gato') { E.gato.acao = 'ronronando'; E.gato.necessidades.carinho = 95; } }
   if (c.acao === 'mover' && c.op === 'soltar') { const it = mapaDemo.itens.find((i) => i.id === c.item); if (it) { it.x = c.valor.x; it.y = c.valor.y; mapaDemo.versao = (mapaDemo.versao || 1) + 1; } }
   const pepper = ATIVIDADES[Math.floor(Date.now() / 25000) % ATIVIDADES.length];
-  return { mapa: mapaDemo, pepper, itens: E.itens, gato: E.gato, casa: E.casa, clima: 'chuva', reacao, avisos: [], agora: new Date().toISOString() };
+  return { mapa_id: naJean ? 'casa-jean' : 'casa-pepper', mapa: naJean ? CASA_JEAN_DEMO : mapaDemo, pepper: { ...pepper, necessidades: { fome: 62, energia: 48, higiene: 80, bexiga: 70, diversao: 55, social: 66, conforto: 74, ambiente: 68, saude: 92, estresse: 30 } },
+    itens: naJean ? { 'abajur-chao': { ligada: true, brilho: 85 } } : E.itens, gato: E.gato, casa: E.casa, clima: 'chuva', reacao, avisos: [], jean: { ...J }, agora: new Date().toISOString() };
+}
+// O celular do jogo na demonstração (o 69 de verdade lê o banco).
+function celularDemo(c) {
+  if (c.acao === 'localizacao') return { local: { ligado: c.op !== 'desligar', lugar: 'casa', segredo: '0a1b2c3d4e5f', lugares: [{ nome: 'casa', raio: 150 }], eventos: [] } };
+  return { cabecalho: { pepper: { atividade: 'lendo no sofá', humor: 'contente' }, jean: { onde: 'em casa, em Canoinhas' }, clima: { temperatura: 8, condicao: 'Chuva fraca' } },
+    status: { emocao: { base: 'Contente', frase: 'Contente, cansada mas feliz' }, motivos: [{ texto: 'O Jean mandou mensagem hoje', pontos: 2 }, { texto: 'Casa aconchegante', pontos: 1 }, { texto: 'Dia puxado', pontos: -1 }],
+      barras: { fome: 62, energia: 48, higiene: 80, bexiga: 70, diversao: 55, social: 66, conforto: 74, ambiente: 68, saude: 92, estresse: 30 }, saudade: 40, ciclo: { dia: 9, duracao: 28, fase: 'folicular' } },
+    pessoas: [{ nome: 'Jean', relacao: 'chefe', onde: 'em casa, em Canoinhas', afeto: 62 }, { nome: 'Morgan', relacao: 'familia', onde: '', afeto: 90 }, { nome: 'Amiga de exemplo', relacao: 'amizade', onde: '', afeto: 55 }],
+    mapa: { pepper: { cidade: 'Nova York', bairro: 'Brooklyn Heights', onde: 'em casa (sala)' }, jean: { cidade: 'Canoinhas', onde: 'em casa, em Canoinhas', viagem: null }, viagens: [] },
+    casa: { contas: [{ o_que: 'Aluguel', valor: 2400, moeda: 'USD' }], bichos: [{ nome: 'Biscoito', vivo: true, idade: 4, saude: 96 }] },
+    bolsa: { guardados: { Leite: 1 }, guardados_itens: [], saldos: [{ moeda: 'USD', saldo: 5230.5 }] },
+    linha: [{ tipo: 'diario', texto: 'Dia bom no trabalho.', em: '2026-11-24' }, { tipo: 'momento', texto: 'Leu no sofá com o gato.', em: '2026-11-25T10:00:00Z' }],
+    config: { local: { ligado: true, lugar: 'casa', segredo: '0a1b2c3d4e5f', lugares: [{ nome: 'casa', raio: 150 }], eventos: [] }, jean: JEAN_DEMO.config } };
 }
 
 export async function responder(caminho, corpo, estado) {
@@ -295,6 +322,7 @@ export async function responder(caminho, corpo, estado) {
     r = c.acao === 'gato' ? { gato: G[0] } : c.acao === 'gatos' ? { gatos: vazioOu(estado, G, []) } : {};
   } else if (caminho === 'vida') r = vida(c, estado);
   else if (caminho === 'jogo/cena') { r = await jogoDemo(c); if (r.ok === false) return r; }
+  else if (caminho === 'jogo/celular') r = celularDemo(c);
   else if (caminho === 'agenda') r = agenda(c, estado);
   else if (caminho === 'financas') r = financas(c, estado);
   else if (caminho === 'pessoa') r = pessoa(c, estado);

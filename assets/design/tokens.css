@@ -71,6 +71,7 @@
   --jogo-bem: #6FA36B;
   --jogo-meio: #F6D76B;
   --jogo-mal: #E0405A;
+  --jogo-saudade: #FF6FB5;
   --jogo-linha: 2px;
 }
 @media (prefers-color-scheme: dark) {

@@ -1,17 +1,11 @@
 // Central — os menus de item do jogo (DEC-150, DEC-175; layout/telas 06 a 11): abrem só quando o item é escolhido, ao lado
 // dele, com um ponto no item; toque e botões juntos; o "voltar" do Android fecha; alvos de 48 px. Cada ação vai ao servidor
 // (o 68), que decide e devolve a cena nova; a recusa (a Morgan em casa, o medo, a tomada) aparece como aviso.
+import { NOMES } from './catalogo.js';
 const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const CORES = [['Quente', '#ffc27a'], ['Fria', '#ffe9c4'], ['Azul', '#9fd3ff'], ['Rosa', '#ff6fb5'], ['Verde', '#7dff9b'], ['Vermelha', '#ff5a5a']];
 const FUSOS = [['Nova York', 'America/New_York'], ['Canoinhas', 'America/Sao_Paulo'], ['Londres', 'Europe/London'], ['Lisboa', 'Europe/Lisbon'], ['Tóquio', 'Asia/Tokyo'], ['Los Angeles', 'America/Los_Angeles']];
-const NOMES = { abajur_chao: 'Abajur', luzinhas: 'Luzinhas', lava: 'Luminária de lava', fita_led: 'Fita de luz', monitor: 'Computador', pendente: 'Luz da cozinha', luz_armario: 'Luz da bancada',
-  abajur_mesa: 'Abajur', luminaria_leitura: 'Luminária de leitura', aquario: 'Aquário', tv: 'TV', toca_discos: 'Toca-discos', violao: 'Violão', relogio: 'Relógio', relogio_j: 'Relógio "J"',
-  caixa_areia: 'Caixa de areia', potes_gato: 'Potes do gato', geladeira: 'Geladeira', estante: 'Estante', guarda_roupa: 'Guarda-roupa', comoda: 'Cômoda', bancada: 'Despensa', cesto_roupa: 'Cesto de roupa',
-  arranhador: 'Arranhador', arvore: 'Árvore', banco: 'Banco', banheira: 'Banheira', cadeira: 'Cadeira', cafeteira: 'Cafeteira', cama: 'Cama', caminha_gato: 'Caminha do gato',
-  capacho: 'Capacho', cesto: 'Cesto', chinelos: 'Chinelos', criado: 'Criado-mudo', fogao: 'Fogão', hidrante: 'Hidrante', livros: 'Livros', lixeira: 'Lixeira', manta: 'Manta',
-  mesa: 'Mesa', mesa_baixa: 'Mesa de centro', mesa_jantar: 'Mesa de jantar', micro_ondas: 'Micro-ondas', pia: 'Pia', pia_banheiro: 'Pia', planta_grande: 'Planta',
-  planta_pendurada: 'Planta', planta_pequena: 'Planta', poltrona: 'Poltrona', poste: 'Poste', prateleira: 'Prateleira', pufe: 'Pufe', quadro: 'Quadro', sofa: 'Sofá',
-  tapete: 'Tapete', tapete_redondo: 'Tapete', vasinhos: 'Vasinhos', vaso_sanitario: 'Vaso sanitário' };
+
 const barra = (rot, v) => `<div class="jogo__texto2">${esc(rot)} <span class="jogo__barra"><i style="width:${Math.max(0, Math.min(100, Math.round(v)))}%"></i></span> ${Math.round(v)}</div>`;
 const botao = (rot, acao, extra = '') => `<button class="jogo__linha" data-acao="${esc(acao)}"${extra}>${esc(rot)}</button>`;
 const par = (rot, menos, mais) => `<div class="jogo__par"><button class="jogo__mini" data-acao="${esc(menos)}" aria-label="Menos">‹</button><span class="jogo__texto">${esc(rot)}</span><button class="jogo__mini" data-acao="${esc(mais)}" aria-label="Mais">›</button></div>`;
@@ -32,7 +26,7 @@ export function criarMenus({ raiz, motor, enviar, som }) {
   }
   async function agir(corpo) {
     som.toque();
-    try { const c = await enviar(corpo); motor.atualizar(c); for (const t of c.avisos || []) aviso(t); if (c.reacao) aviso(c.reacao === 'ue' ? 'Ela estranhou.' : c.reacao === 'defeito' ? 'Ela acha que é defeito.' : c.reacao === 'eletricista' ? 'Ela tirou da tomada e vai chamar o eletricista.' : 'Ela ficou com medo.'); som.certo(); return c; }
+    try { const c = await enviar(corpo); motor.atualizar(c); for (const t of c.avisos || []) aviso(t); if (c.reacao) aviso(c.reacao === 'ue' ? 'Ela estranhou.' : c.reacao === 'defeito' ? 'Ela acha que é defeito.' : c.reacao === 'eletricista' ? 'Ela tirou da tomada e vai chamar o eletricista.' : c.reacao === 'viu_jean' ? 'Ela viu você!' : 'Ela ficou com medo.'); som.certo(); return c; }
     catch (e) { som.recusa(); aviso(e.message || 'Não deu certo agora.', 'erro'); return null; }
   }
   function desenhar(id) {
@@ -50,6 +44,7 @@ export function criarMenus({ raiz, motor, enviar, som }) {
       corpo = botao(e.ligada ? 'Desligar' : 'Ligar', e.ligada ? 'desligar' : 'ligar') + par(`${e.canal || 1} ${e.programa || ''}`.trim(), 'canal:-1', 'canal:1') + par(`Volume ${e.volume ?? 4}`, 'volume:-', 'volume:+')
         + botao(e.mudo ? 'Tirar o mudo' : 'Mudo', 'mudo') + botao(e.videogame ? 'Voltar à TV' : 'Videogame', 'videogame') + botao('Assistir junto', 'assistir_junto'); }
     else if (it && it.modelo === 'toca_discos') { estado = e.tocando ? e.musica || 'tocando' : 'parado'; corpo = botao(e.tocando ? 'Pausar' : 'Tocar', e.tocando ? 'pausar' : 'tocar') + botao('Trocar o disco', 'disco'); }
+    else if (it && it.modelo === 'interruptor') { estado = 'na parede'; corpo = botao('Ligar ou desligar as luzes', 'interruptor'); }
     else if (it && it.modelo === 'violao') { estado = 'no canto'; corpo = botao('Pedir uma música', 'pedir_musica'); }
     else if (it && /^relogio/.test(it.modelo)) { const f = e.fuso || (it.modelo === 'relogio_j' ? 'America/Sao_Paulo' : 'America/New_York'); const nomeF = (FUSOS.find((x) => x[1] === f) || ['?'])[0];
       estado = new Intl.DateTimeFormat('pt-BR', { timeZone: f, hour: '2-digit', minute: '2-digit' }).format(new Date()) + ' · ' + nomeF;
