@@ -11,8 +11,10 @@ export function falarSobre(texto) { rascunho = texto; ir('CV'); }
 const ROTA_DO_TIPO = { tarefa: 'VI2', compromisso: 'AG1', contato: 'AG3', gasto: 'FI2', assinatura: 'FI4' };
 const rotaDe = (ref) => (ref && ROTA_DO_TIPO[ref.tipo] ? ROTA_DO_TIPO[ref.tipo] + '/' + encodeURIComponent(ref.id) : null);
 
+// O histórico inteiro (DEC-177): começa pelas últimas 80; rolar até o topo traz mais 200, até acabar.
+let quantas = 80;
 async function carregarConversa() {
-  const d = await chamar('mensagem', { acao: 'listar' });
+  const d = await chamar('mensagem', { acao: 'listar', quantas });
   d.pendentes = (await listarFila()).filter((i) => i.caminho === 'mensagem');
   return d;
 }
@@ -113,7 +115,24 @@ const CV = {
     };
     ligarMensagens(main, d, atualizar);
     marcarLidas(d);
+    quantas = 80;
     descer();
+    // Rolou até o topo e ainda há mensagens antes: traz mais, sem perder o lugar na tela.
+    let temMais = !!d.tem_mais, buscando = false;
+    const noTopo = async () => {
+      if (!ctx.atual()) { window.removeEventListener('scroll', noTopo); return; }
+      if (buscando || !temMais || window.scrollY > 60) return;
+      buscando = true; quantas += 200;
+      try {
+        const altura = document.documentElement.scrollHeight;
+        const novo = await carregarConversa();
+        if (!ctx.atual()) return;
+        temMais = !!novo.tem_mais; ultimo = JSON.stringify(novo);
+        main.innerHTML = mensagensHtml(novo); ligarMensagens(main, novo, atualizar);
+        window.scrollTo(0, document.documentElement.scrollHeight - altura + window.scrollY);
+      } catch (e) { quantas -= 200; } finally { buscando = false; }
+    };
+    window.addEventListener('scroll', noTopo, { passive: true });
     const relogio = setInterval(() => {
       if (!ctx.atual()) { clearInterval(relogio); return; }
       if (document.visibilityState === 'visible') atualizar();
