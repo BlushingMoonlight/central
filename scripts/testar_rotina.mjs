@@ -2,6 +2,9 @@
 // manda. Ela anda pela rota do servidor (sem pular), faz o desvio e volta, esmaece quando o vigia a leva; a Morgan chega
 // da escola pela porta e sai por ela; as visitas chegam e vão embora pela porta; a fumaça, o vapor, o celular (na mão e no
 // criado-mudo), o que ela leva andando, o prato na mesa e a cena genérica da TV aparecem; todo balão que o 68 manda tem desenho.
+// Independente do relógio (o conserto de 26/11 no central #26): a demonstração troca de atividade a cada 25 s pelo relógio
+// de verdade, então cada caso começa do zero (sem o "acabou de sair do banheiro"), e o tempo do jogo passa por conta do
+// teste, quadro a quadro, com a cena parada: nada depende de a máquina ser rápida ou lenta, nem da hora em que roda.
 // Como rodar: node scripts/testar_rotina.mjs   (abre o jogo no modo de demonstração; sai com erro se algo não bater)
 import { createRequire } from 'node:module'; const { chromium } = createRequire(import.meta.url)('playwright');
 import { servir } from './servidor.mjs'; import { fileURLToPath } from 'node:url';
@@ -19,19 +22,24 @@ const pg = await b.newPage({ viewport: { width: 390, height: 844 } });
 const erros = []; pg.on('pageerror', (e) => erros.push(e.message));
 await pg.goto(s.url + '/?demo=1#JG'); await pg.waitForTimeout(4000);
 const r = await pg.evaluate(async () => {
-  const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
   const M = await import('/jogo/cena.js'); window.jogoTeste.motor.atualizar = () => {}; // o relógio do app não interfere
   const c = window.jogoTeste.motor.jogo.scene.scenes[0]; const m = c.mapa; const porta = m.pontos.porta; const p = c.pepper;
-  const agora = () => new Date().toISOString(); const o = {};
+  // O tempo do jogo é do teste: a cena para, e cada "espera" passa quadros de 16 ms (o relógio da cena anda junto).
+  c.scene.pause(); let t = c.time.now;
+  const espera = async (ms) => { for (let k = 0; k < Math.round(ms / 16); k++) { t += 16; c.time.now = t; c.update(t, 16); } };
+  const agora = () => new Date(Date.now()).toISOString(); const o = {}; // uma fonte de hora só (Date.now)
   const rotaDe = (de, para, livres = []) => M.caminho(M.grade(m, livres), de, para).map((q) => [q.x, q.y]);
   const vendo = () => { c.vistaEm = Date.now(); };
-  const noSofa = () => { p.visivel = false; p.estavaFora = undefined; p.fade = null; c.vistaEm = 0; c.atualizar({ pepper: { objeto: 'sofa', pose: 'sentada' } }); vendo(); };
+  // Cada caso começa do zero: nada do que a demonstração fez antes (o banho, a rua, uma rota pela metade) conta.
+  const zerar = () => { Object.assign(p, { visivel: false, estavaFora: undefined, saiuDoPrivado: false, privado: false, fade: null, alvo: null, caminho: [], desvioEm: undefined, esmaecerDe: undefined });
+    for (const x of [c.morgan, ...c.visitas]) Object.assign(x, { visivel: false, saindo: false, alvo: null, caminho: [], onde: null }); c.vistaEm = 0; };
+  const noSofa = () => { zerar(); c.atualizar({ pepper: { objeto: 'sofa', pose: 'sentada' } }); vendo(); };
   // 1. a rota do servidor: ela segue dali, sem pular, na velocidade de lá
   noSofa(); const ida = [[3.5, 4.5], ...rotaDe({ x: 3.5, y: 4.5 }, { x: 9.5, y: 1.6 }, ['fogao', 'sofa'])];
   c.atualizar({ agora: agora(), pepper: { objeto: 'fogao', pose: 'andando', x: 3.5, y: 4.5, acao: { tipo: 'cozinhar', desde: agora(), fase: 'indo' }, rota: ida } });
   const fim = p.caminho[p.caminho.length - 1] || {};
   o.rota = { x: p.x, y: p.y, fimX: fim.x, fimY: fim.y, vel: p.vel, n: p.caminho.length };
-  await espera(1200); o.rotaDepois = { x: p.x, y: p.y };
+  await espera(1200); o.rotaDepois = { x: p.x, y: p.y, naRota: M.projetar(ida.map(([x, y]) => ({ x, y })), p.x, p.y) };
   // no meio da rota (o servidor já a vê adiante), ela anda até lá e segue; nunca pula
   noSofa(); const meio = ida[Math.floor(ida.length / 2)];
   c.atualizar({ agora: agora(), pepper: { objeto: 'fogao', pose: 'andando', x: meio[0], y: meio[1], acao: { tipo: 'cozinhar', desde: agora(), fase: 'indo' }, rota: ida } });
@@ -64,7 +72,7 @@ const r = await pg.evaluate(async () => {
   o.sentidos = { fumaca: c.fumaca.some((x) => x.visible), vapor: c.vapor.some((x) => x.visible), cel: c.spCel.visible, prato: c.spPrato.visible, tv: c.tvTela.visible, tipo: c.tvTipo };
   c.atualizar({ itens: { tv: { ligada: false } }, pepper: { ...sentado, celular: 'perto', sentidos: {} } }); await espera(300);
   o.semSentidos = { fumaca: c.fumaca.some((x) => x.visible), cel: c.spCel.visible, prato: c.spPrato.visible, tv: c.tvTela.visible };
-  p.visivel = false; c.vistaEm = 0; c.atualizar({ pepper: { objeto: 'cama', pose: 'deitada', balao: 'zzz', celular: 'criado' } }); vendo(); await espera(300); o.criado = c.spCelCriado.visible && !c.spCel.visible;
+  zerar(); c.atualizar({ pepper: { objeto: 'cama', pose: 'deitada', balao: 'zzz', celular: 'criado' } }); vendo(); await espera(300); o.criado = c.spCelCriado.visible && !c.spCel.visible;
   noSofa(); c.atualizar({ agora: agora(), pepper: { objeto: 'mesa-jantar', pose: 'andando', x: 3.5, y: 4.5, acao: { tipo: 'comer', desde: agora(), fase: 'indo', leva: 'prato' }, rota: [[3.5, 4.5], ...rotaDe({ x: 3.5, y: 4.5 }, { x: 10.6, y: 4.2 }, ['mesa-jantar', 'sofa'])] } });
   await espera(300); o.leva = c.spLeva.visible && c.spLeva.texture.key === 'det-prato_mao';
   // 7. todo balão que o 68 manda tem desenho
@@ -78,6 +86,8 @@ if (!(perto(r.rota, 3.5, 4.5) && r.rota.n > 1)) f.push(`a rota: ela não começo
 if (!(Math.abs(r.rota.fimX - 9.5) < 0.01 && Math.abs(r.rota.fimY - 1.6) < 0.01)) f.push('a rota: o fim não é o lugar do fogão');
 if (r.rota.vel !== 1) f.push('a rota: a velocidade não é a do servidor (1 bloco por segundo)');
 const andou = Math.hypot(r.rotaDepois.x - 3.5, r.rotaDepois.y - 4.5); if (!(andou > 0.4 && andou < 1.8)) f.push(`a rota: em 1,2 s ela andou ${andou.toFixed(2)} blocos`);
+// Pela rota, 1,2 s a 1 bloco por segundo são 1,2 bloco andados (com o tempo do teste, a conta é exata).
+if (!(Math.abs(r.rotaDepois.naRota - 1.2) < 0.05)) f.push(`a rota: em 1,2 s ela andou ${r.rotaDepois.naRota.toFixed(2)} blocos pela rota, não 1,2`);
 if (!(perto(r.meio, 3.5, 4.5) && r.meio.n > 1)) f.push('no meio da rota: ela pulou em vez de andar até lá');
 if (!(r.vigia.fade && perto(r.vigia, 3.5, 4.5))) f.push('o vigia: ela pulou sem esmaecer');
 if (!(perto(r.vigiaDepois, P.x, P.y) && !r.vigiaDepois.fade && r.vigiaDepois.alfa === 1)) f.push(`o vigia: depois do esmaecer ela não estava na porta (${JSON.stringify(r.vigiaDepois)})`);
