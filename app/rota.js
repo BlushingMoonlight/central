@@ -4,7 +4,8 @@
 export function lerRota(hash, telas) {
   const h = String(hash || '').replace(/^#/, ''); const barra = h.indexOf('/');
   const cod = barra < 0 ? h : h.slice(0, barra);
-  if (!telas[cod]) return { cod: 'CV', args: [] };
+  // Sem código conhecido (ou sem nada), abre o jogo: o app é o jogo (DEC-199).
+  if (!telas[cod]) return { cod: 'JG', args: [] };
   if (barra < 0) return { cod, args: [] };
   const resto = h.slice(barra + 1); let id = resto;
   try { id = decodeURIComponent(resto); } catch (e) { id = resto; }

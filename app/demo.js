@@ -218,7 +218,7 @@ function painel(tela, c, estado) {
       meses: [mes(2026, 11), mes(2026, 12), mes(2027, 1), mes(2027, 2)] }, { quem: 'personagem:Morgan', nome: 'Morgan', hoje: null, meses: [] }] };
   }
   if (tela === 'whatsapp' && c.acao === 'fio') return { conversa: [{ autor: 'pessoa', texto: 'oi, aqui é a Virginia, trabalho com o Jean. ele chega amanhã!', saiu: true }, { autor: 'terceiro', texto: 'que bom! vou fazer almoço', saiu: true }] };
-  if (tela === 'whatsapp' && ['conectar', 'trocar', 'qr'].includes(c.acao)) return { pessoa_id: c.pessoa_id, estado: 'esperando_qr', qr: '' };
+  if (tela === 'whatsapp' && ['conectar', 'trocar', 'qr'].includes(c.acao)) return { pessoa_id: c.pessoa_id, estado: 'esperando_qr', qr: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' };
   if (tela === 'whatsapp') return {};
   if (tela === 'sistema' && c.acao === 'whatsapp') return { canal: c.canal || 'whatsapp', estado: 'conectado', url: c.url || 'https://evolution.exemplo.com', numero: c.numero || '5541900000000', instancia: 'pepper',
     segredo: '0a1b2c3d4e5f', webhook: 'https://<o endereço do n8n>/webhook/central/whatsapp' };
@@ -296,9 +296,31 @@ async function jogoDemo(c) {
     itens: naJean ? { 'abajur-chao': { ligada: true, brilho: 85 } } : itensDaVez, gato: E.gato, casa: E.casa, clima: 'chuva', reacao, avisos: [], jean: { ...J }, agora: new Date().toISOString() };
 }
 // O celular do jogo na demonstração (o 69 de verdade lê o banco).
+// A parte I (DEC-199 a DEC-202): o papel (?papel=jogador faz o jogador comum), o celular dela, a ficha, a exportação e o reportar.
+const AGORA_DEMO = '2026-11-23T15:00:00Z';
+const papelDemo = () => (new URLSearchParams(location.search).get('papel') === 'jogador' ? 'jogador' : 'administrador');
+const FICHAS_DEMO = {
+  pepper: { quem: 'pepper', nome: 'Pepper', idade: 36, relacao: 'trabalha para o Jean (Chief of staff)', agora: { faz: 'lendo no sofá', onde: 'em casa (sala)', desde: '2026-11-23T14:35:00Z' },
+    humor: 'contente', barras: { fome: 62, energia: 48, social: 66, estresse: 30 }, trabalho: 'Chief of staff', mora: 'Brooklyn Heights, Nova York', bens: [{ o_que: 'Na conta (USD)', valor: 5230.5, moeda: 'USD' }],
+    momentos: [{ texto: 'Leu no sofá com o gato.', em: '2026-11-23T13:00:00Z' }],
+    completa: { personalidade: [{ traco: 'abertura', valor: 7 }, { traco: 'amabilidade', valor: 8 }], lacos: [{ com: 'Jean', tipo: 'chefe', afeto: 62 }, { com: 'Morgan', tipo: 'familia', afeto: 90 }], pensa: 'Dia bom no trabalho.' } },
+  morgan: { quem: 'morgan', nome: 'Morgan', idade: 7, relacao: 'filha da Pepper', agora: { faz: 'brincando', onde: 'em casa', desde: null }, humor: null, barras: null, trabalho: 'a escola',
+    mora: 'com a Pepper, em Brooklyn Heights', bens: [], momentos: [{ texto: 'Desenhou um gato na escola.', em: '2026-11-23T12:00:00Z' }], completa: { personalidade: [], historia: 'Adora desenhar.', lacos: [{ com: 'Pepper', tipo: 'familia', afeto: null }], pensa: null } },
+  jean: { quem: 'jean', nome: 'Jean', idade: null, relacao: 'você · o chefe da Pepper', agora: { faz: 'em casa, em Canoinhas', onde: 'em casa, em Canoinhas', desde: null }, humor: null, barras: null,
+    trabalho: '', mora: 'Canoinhas, Santa Catarina', bens: [], momentos: [], completa: { personalidade: [], lacos: [{ com: 'Pepper', tipo: 'o que ela sente por você', afeto: 62 }], pensa: null } },
+};
 function celularDemo(c) {
+  if (c.acao === 'ficha') { const f = FICHAS_DEMO[String(c.quem || '').toLowerCase()]; return f ? { agora: AGORA_DEMO, ficha: f } : { ok: false, erro: 'Não achei essa pessoa.' }; }
+  if (c.acao === 'dela') return { agora: AGORA_DEMO, dela: { despertador: { hora: '07:00', tocou: true }, compras: ['Massa', 'Leite'],
+    conversas: [{ com: 'Morgan', mensagens: [{ autor: 'Pepper', texto: 'filha, já escovou os dentes?', em: '2026-11-23T01:00:00Z' }, { autor: 'Morgan', texto: 'jáaa', em: '2026-11-23T01:01:00Z' }], momentos: [] },
+      { com: 'Amiga de exemplo', mensagens: [], momentos: [{ texto: 'Almoçaram juntas.', em: '2026-11-22T17:00:00Z' }] }],
+    whatsapp: [{ autor: 'Jean', texto: 'bom dia!', em: '2026-11-23T11:00:00Z' }, { autor: 'Pepper', texto: 'bom dia, chefe', em: '2026-11-23T11:01:00Z' }],
+    diario: [{ dia: '2026-11-22', texto: 'Dia bom no trabalho.' }] } };
+  if (c.acao === 'exportar') return { nome_arquivo: `conversa-${c.de}-a-${c.ate}.md`, mensagens: 2, texto: '# Conversa com a Pepper\n\n## 23/11/2026\n\n**Jean** (08:00): bom dia!\n**Pepper** (08:01): bom dia, chefe\n' };
+  if (c.acao === 'reportar') return { bug: 7 };
   if (c.acao === 'localizacao') return { local: { ligado: c.op !== 'desligar', lugar: 'casa', segredo: '0a1b2c3d4e5f', lugares: [{ nome: 'casa', raio: 150 }], eventos: [] } };
-  return { cabecalho: { pepper: { atividade: 'lendo no sofá', humor: 'contente' }, jean: { onde: 'em casa, em Canoinhas' }, clima: { temperatura: 8, condicao: 'Chuva fraca' } },
+  return { agora: AGORA_DEMO, papel: papelDemo(), admin: papelDemo() === 'administrador', versao: { minima: 0, api: 1, atualize: false },
+    cabecalho: { pepper: { atividade: 'lendo no sofá', humor: 'contente' }, jean: { onde: 'em casa, em Canoinhas' }, clima: { temperatura: 8, condicao: 'Chuva fraca' } },
     status: { emocao: { base: 'Contente', frase: 'Contente, cansada mas feliz' }, motivos: [{ texto: 'O Jean mandou mensagem hoje', pontos: 2 }, { texto: 'Casa aconchegante', pontos: 1 }, { texto: 'Dia puxado', pontos: -1 }],
       barras: { fome: 62, energia: 48, higiene: 80, bexiga: 70, diversao: 55, social: 66, conforto: 74, ambiente: 68, saude: 92, estresse: 30 }, saudade: 40, ciclo: { dia: 9, duracao: 28, fase: 'folicular' } },
     pessoas: [{ nome: 'Jean', relacao: 'chefe', onde: 'em casa, em Canoinhas', afeto: 62 }, { nome: 'Morgan', relacao: 'familia', onde: '', afeto: 90 }, { nome: 'Amiga de exemplo', relacao: 'amizade', onde: '', afeto: 55 }],
@@ -307,6 +329,22 @@ function celularDemo(c) {
     bolsa: { guardados: { Leite: 1 }, guardados_itens: [], saldos: [{ moeda: 'USD', saldo: 5230.5 }] },
     linha: [{ tipo: 'diario', texto: 'Dia bom no trabalho.', em: '2026-11-24' }, { tipo: 'momento', texto: 'Leu no sofá com o gato.', em: '2026-11-25T10:00:00Z' }],
     config: { local: { ligado: true, lugar: 'casa', segredo: '0a1b2c3d4e5f', lugares: [{ nome: 'casa', raio: 150 }], eventos: [] }, jean: JEAN_DEMO.config } };
+}
+
+function bastidoresDemo(c, estado) {
+  if (c.acao !== 'ler') return c.acao === 'por_que' ? { mensagens: [{ id: 1, autor: 'pepper', texto: 'tô na sala', em: '2026-11-23T14:00:00Z', apagada: false }], ia: [{ camada: 'conversa', modelo: 'leve', fim: 'stop', em: '2026-11-23T14:00:00Z' }], registro: [] } : {};
+  const v = (x) => vazioOu(estado, x, []);
+  return { funil: { abriu: '2026-11-01T12:00:00Z', criou_o_personagem: '2026-11-01T12:05:00Z', falou_com_ela: '2026-11-01T12:10:00Z', mexeu_na_casa: '2026-11-02T20:00:00Z' },
+    seguranca: v([{ id: 1, tipo: 'pedido_de_dado', nivel: 'medio', detalhe: 'alguém pediu o endereço do Jean', em: '2026-11-22T18:00:00Z' }]),
+    falhas_conversa: v([{ tipo: 'resposta_vazia', vezes: 1, ultima: '2026-11-22T22:00:00Z' }]), chaves: {},
+    travamentos: v([{ pessoa_id: 'pepper', motivo: 'sem caminho até o fogão', acao: 'cozinhar', em: '2026-11-22T19:00:00Z' }]),
+    observacoes: v([{ o_que: 'a TV ligou sozinha', onde: 'sala', importancia: 8, em: '2026-11-22T20:10:00Z' }]),
+    interesses: v([{ id: 1, assunto: 'Fórmula 1', de_onde: 'o Jean disse que acompanha', sabe: 3 }]),
+    metas: [{ respondidas_em_60s_pct: 99.2, mensagens_perdidas: 0, lembretes_perdidos: 0 }],
+    ajustes: { limites_espontaneas: { por_hora: 3, madrugada: 2, por_dia: 12, sem_resposta: 2, orcamento_dia_usd: 0.3 }, orcamento: { conversa: 1.2, espontaneas: 0.3 } },
+    fatos: v([{ id: 1, assunto: 'a Morgan', fato: 'A Morgan é filha dela.', toca: 'morgan', contradiz: 'nao tenho filh' }]),
+    contatos: v([{ id: 1, nome: 'Contato de exemplo', relacao: 'amigo', circulo: 'conhecido' }]), bugs: v([{ id: 7, descricao: 'a TV sumiu', estado: 'aberto', criado_em: '2026-11-22T21:00:00Z' }]),
+    aparelhos: [{ nome: 'iPhone', versao_app: 2, ultimo_uso: '2026-11-23T14:00:00Z' }], versao_minima: { versao: 0, api: 1 } };
 }
 
 export async function responder(caminho, corpo, estado) {
@@ -338,7 +376,9 @@ export async function responder(caminho, corpo, estado) {
   else if (caminho === 'aparelho') {
     r = c.acao === 'chave_push' ? { chave_publica: '' } : { mostrar_texto: false, aparelhos: [
       { id: 'x1', nome: 'iPhone', este: true, lembrado_ate: '2027-02-21' }, { id: 'x2', nome: 'iPad', ultimo_uso: '2026-11-22' }] };
-  } else if (caminho.startsWith('painel/')) r = painel(caminho.slice(7), c, estado);
+  } else if (caminho.startsWith('painel/') && papelDemo() !== 'administrador') return { ok: false, erro: 'O painel não abriu. Só o administrador abre o painel; se for você, feche e abra o app de novo.' };
+  else if (caminho === 'painel/bastidores') r = bastidoresDemo(c, estado);
+  else if (caminho.startsWith('painel/')) r = painel(caminho.slice(7), c, estado);
   else r = { ok: false, erro: 'Não deu para carregar.' };
   return { ok: true, ...copia(r) };
 }

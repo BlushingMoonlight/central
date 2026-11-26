@@ -42,6 +42,7 @@
   /* Tempo */
   --tempo-rapido: 150ms;
   --tempo: 250ms;
+  --tempo-abertura: 1800ms;
 
   /* Cor, claro */
   --fundo: #F7F8FA;
@@ -126,6 +127,44 @@
   --jogo-texto-2: #B9A6D6;
   --jogo-sel: #3B2A55;
 }
+/* Os apps do celular e a entrada, nas cores do jogo (DEC-199): a janela escura, a borda dourada; o mesmo no claro e no escuro */
+.jogo__app, .tela--jogo {
+  color-scheme: dark;
+  --fundo: #1B1430;
+  --superficie: #241B3B;
+  --superficie-2: #2F2550;
+  --texto: #FFF8EC;
+  --texto-2: #C4B3E0;
+  --linha: #4A3A6B;
+  --destaque: #FAD28C;
+  --sobre-destaque: #1A1624;
+  --bolha-ela: #2F2550;
+  --bolha-ele: #FAD28C;
+  --texto-ele: #1A1624;
+  --perigo: #FF8A80;
+  --sobre-perigo: #2A0705;
+  --atencao: #F6D76B;
+  --certo: #8FD08A;
+  --camera-fundo: #000000;
+  --sobre-camera: #FFFFFF;
+  --jogo-fundo: #1B1430;
+  --jogo-janela: #1A1624;
+  --jogo-borda: #FAD28C;
+  --jogo-texto: #FFF8EC;
+  --jogo-texto-2: #B9A6D6;
+  --jogo-sel: #3B2A55;
+  --sombra: none;
+}
+/* A arte da abertura (I3): a casa à noite e a janela acendendo */
+.abertura__noite { fill: #1B1430; }
+.abertura__parede { fill: #3B2A55; }
+.abertura__telhado { fill: #5A3E2B; }
+.abertura__moldura { fill: #FAD28C; }
+.abertura__vidro { fill: #1A1624; }
+.abertura__luz { fill: #F6D76B; }
+.abertura__gato { fill: #1A1624; }
+.abertura__estrela { fill: #FFF8EC; }
+
 @media (prefers-reduced-motion: reduce) {
-  :root { --tempo-rapido: 0ms; --tempo: 0ms; }
+  :root { --tempo-rapido: 0ms; --tempo: 0ms; --tempo-abertura: 0ms; }
 }

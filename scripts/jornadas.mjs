@@ -52,6 +52,22 @@ const SO_APP = [
   ['22. Contrapropor o aumento que ela pediu', 4, 'CV', [['estado', 'aumento'], ['toque', 'Mudar'], ['toque', 'Mudar o valor'], ['escrever', '#valor', '50000'], ['toque', 'Aceitar']]],
   ['23. Aceitar o pedido dela na pessoa', 2, 'PE1', [['toque', 'Pessoas'], ['estado', 'aumento'], ['toque', 'Aceitar']]],
 ];
+// No app, desde a parte I (DEC-199), não há mais as seções no rodapé: tudo é um app do celular do jogo. De qualquer app,
+// "‹ Celular" volta à tela de início do celular, e um toque abre o outro app (os toques novos estão na DEC-199).
+const NO_APP = {
+  '6. Pagar o salário': [4, 'PE1', [['toque', '‹ Celular'], ['estado', 'salario'], ['toque', 'Pepper'], ['toque', 'Pagar o salário'], ['toque', 'Confirmar']]],
+  '9b. Marcar o pedido como pronto': [4, 'PJ10', [['toque', '‹ Celular'], ['toque', 'Administrador'], ['toque', 'Pedidos de função'], ['toque', 'Pronto']]],
+  '10. Ver a carteira dela': [3, 'PJ7', [['toque', '‹ Celular'], ['toque', 'Administrador'], ['toque', 'Carteira e conta']]],
+  'Árvore: o que precisa de você hoje': [2, 'VI0', [['toque', '‹ Celular'], ['toque', 'Tarefas']]],
+  'Árvore: tarefa urgente feita': [3, 'VI0', [['toque', '‹ Celular'], ['toque', 'Tarefas'], ['toque', 'Feito']]],
+  'Árvore: agenda': [2, 'AG0', [['toque', '‹ Celular'], ['toque', 'Agenda']]],
+  'Árvore: gasto do mês': [2, 'FI0', [['toque', '‹ Celular'], ['toque', 'Finanças']]],
+  'Árvore: assinaturas': [3, 'FI3', [['toque', '‹ Celular'], ['toque', 'Finanças'], ['toque', 'Assinaturas']]],
+  'Árvore: abrir o painel': [2, 'PJ0', [['toque', '‹ Celular'], ['toque', 'Administrador']]],
+  '19. Mudar o salário': [7, 'PE4', [['toque', '‹ Celular'], ['toque', 'Pepper'], ['toque', 'Contrato e salário'], ['toque', 'Mudar o salário'], ['escrever', '#sv', '50000'], ['toque', 'Mudar o salário'], ['toque', 'Mudar o salário']]],
+  '20. Dar um bônus': [7, 'PE4', [['toque', '‹ Celular'], ['toque', 'Pepper'], ['toque', 'Contrato e salário'], ['toque', 'Bônus'], ['escrever', '#bv', '5000'], ['toque', 'Bônus'], ['toque', 'Bônus']]],
+  '23. Aceitar o pedido dela na pessoa': [3, 'PE1', [['toque', '‹ Celular'], ['toque', 'Pepper'], ['estado', 'aumento'], ['toque', 'Aceitar']]],
+};
 const { chromium } = createRequire(import.meta.url)('playwright');
 const nav = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const p = await nav.newPage({ viewport: { width: 390, height: 844 } });
@@ -94,7 +110,8 @@ const pronta = async () => {
   await a.waitForFunction(() => document.documentElement.dataset.fase && document.documentElement.dataset.fase !== 'carregando', null, { timeout: 5000 });
 };
 let noApp = 0;
-for (const [nome, esperado, chegada, passos] of [...J, ...SO_APP]) {
+for (const jornada of [...J, ...SO_APP]) {
+  const nome = jornada[0]; const [esperado, chegada, passos] = NO_APP[nome] || jornada.slice(1);
   if (SO_PROTOTIPO.has(nome)) continue;
   noApp++;
   await a.goto('about:blank');
