@@ -306,10 +306,16 @@ function balao(tipo) {
     musica: () => { p.retangulo(7, 2, 1, 6, C.vinho); p.retangulo(7, 2, 3, 1, C.vinho); p.retangulo(5, 7, 3, 2, C.vinho); },
     porta: () => { p.retangulo(4, 2, 6, 8, C.madeiraEsc); p.retangulo(5, 3, 4, 6, C.madeira); p.ponto(8, 6, C.amarelo); },
     susto: () => { p.retangulo(6, 2, 2, 6, C.vermelho); p.retangulo(6, 9, 2, 1, C.vermelho); },
+    // os que o 68 já mandava e não tinham desenho (parte B): o brinquedo da Morgan, o café, o lanche, a louça e a conversa
+    brinquedo: () => { p.retangulo(4, 5, 6, 4, C.amarelo); p.retangulo(5, 3, 2, 2, C.rosa); p.retangulo(8, 3, 2, 2, C.azulClaro); p.ponto(6, 7, C.vermelho); },
+    cafe: () => { p.retangulo(4, 5, 5, 4, C.creme); p.retangulo(4, 5, 5, 1, C.madeiraEsc); p.retangulo(9, 6, 1, 2, C.cinza); p.ponto(5, 3, C.cinzaClaro); p.ponto(7, 2, C.cinzaClaro); },
+    lanche: () => { p.retangulo(3, 4, 8, 2, C.caramelo); p.retangulo(3, 6, 8, 1, C.verde); p.retangulo(3, 7, 8, 2, C.caramelo); },
+    louca: () => { p.retangulo(3, 7, 8, 2, C.azulGelo); p.retangulo(4, 5, 6, 2, C.creme); p.retangulo(5, 3, 4, 2, C.azulGelo); },
+    conversa: () => { p.ponto(4, 6, C.vinho); p.ponto(7, 6, C.vinho); p.ponto(10, 6, C.vinho); },
   }[tipo]; if (d) d();
   p.contornar(); return p;
 }
-export const BALOES = ['zzz', 'pergunta', 'coracao', 'livro', 'notebook', 'panela', 'comida', 'tv', 'celular', 'musica', 'porta', 'susto'];
+export const BALOES = ['zzz', 'pergunta', 'coracao', 'livro', 'notebook', 'panela', 'comida', 'tv', 'celular', 'musica', 'porta', 'susto', 'brinquedo', 'cafe', 'lanche', 'louca', 'conversa'];
 
 // Os detalhes do estado da casa, por cima dos itens (DEC-175): a louça, o lixo, a roupa, a cama desarrumada, a areia suja,
 // o xixi fora da caixa, a ração no pote, a mosca, a gota de chuva, o floco de neve e a nota de música.
@@ -325,6 +331,17 @@ export function detalhes() {
   s.mosca = n(3, 3, (p) => { p.ponto(1, 1, C.preto); p.ponto(0, 0, C.cinzaClaro); p.ponto(2, 0, C.cinzaClaro); });
   s.gota = n(1, 4, (p) => p.retangulo(0, 0, 1, 4, C.azulGelo));
   s.floco = n(3, 3, (p) => { p.ponto(1, 0, C.creme); p.ponto(0, 1, C.creme); p.ponto(1, 1, C.creme); p.ponto(2, 1, C.creme); p.ponto(1, 2, C.creme); });
+  // parte B: a fumaça da panela e o vapor do banho (uma nuvenzinha que sobe), o celular na mão ou no criado-mudo, o prato
+  // na mesa, e o que ela leva na mão andando (o prato, a louça, a sacola das compras)
+  s.fumaca = n(6, 5, (p) => { p.retangulo(1, 1, 4, 3, C.cinzaClaro); p.retangulo(2, 0, 2, 5, C.cinzaClaro); p.ponto(2, 1, C.creme); });
+  s.vapor = n(6, 5, (p) => { p.retangulo(1, 1, 4, 3, C.azulGelo); p.retangulo(2, 0, 2, 5, C.creme); });
+  s.celular = n(3, 5, (p) => { p.retangulo(0, 0, 3, 5, C.preto); p.retangulo(1, 1, 1, 3, C.verdeClaro); });
+  s.celular_deitado = n(5, 3, (p) => { p.retangulo(0, 0, 5, 3, C.preto); p.retangulo(1, 1, 3, 1, C.cinza); });
+  s.prato = n(10, 5, (p) => { p.retangulo(0, 2, 10, 2, C.creme); p.retangulo(1, 4, 8, 1, C.cinzaClaro); p.retangulo(3, 1, 4, 2, C.caramelo); p.ponto(4, 1, C.vermelho); p.ponto(6, 2, C.verde); });
+  s.prato_mao = n(7, 3, (p) => { p.retangulo(0, 1, 7, 2, C.creme); p.retangulo(2, 0, 3, 1, C.caramelo); });
+  s.louca_mao = n(7, 4, (p) => { p.retangulo(0, 2, 7, 2, C.azulGelo); p.retangulo(1, 0, 5, 2, C.creme); });
+  s.sacola = n(6, 7, (p) => { p.retangulo(0, 2, 6, 5, C.bege); p.retangulo(1, 0, 1, 2, C.caramelo); p.retangulo(4, 0, 1, 2, C.caramelo); p.ponto(2, 2, C.verde); p.ponto(3, 1, C.vermelho); });
+  for (const k of ['fumaca', 'vapor', 'celular', 'celular_deitado', 'prato', 'prato_mao', 'louca_mao', 'sacola']) s[k].contornar();
   s.nota = n(5, 7, (p) => { p.retangulo(3, 0, 1, 5, C.amarelo); p.retangulo(1, 4, 3, 2, C.amarelo); p.retangulo(3, 0, 2, 1, C.amarelo); });
   return s;
 }
@@ -339,7 +356,36 @@ export function personagens() {
   s['pepper-dormindo'] = cabecaDormindo();
   for (const q of ['parado', 'andando1', 'andando2', 'dormindo']) { const p = gato(q); s[`gato-${q}`] = p; s[`gato-${q}-esp`] = p.espelhar(); }
   for (const b of BALOES) s['balao-' + b] = balao(b);
+  // a Morgan (uma criança, menor que a Pepper) e as duas visitas (pessoas genéricas, de roupa diferente), parte B
+  for (const lado of ['frente', 'costas']) {
+    for (const pose of ['parada', 'sentada']) { const p = crianca(lado, 0, pose); s[`morgan-${lado}-${pose}`] = p; s[`morgan-${lado}-${pose}-esp`] = p.espelhar(); }
+    for (let q = 0; q < 4; q++) { const p = crianca(lado, q, 'andando'); s[`morgan-${lado}-andando${q}`] = p; s[`morgan-${lado}-andando${q}-esp`] = p.espelhar(); }
+    VISITAS.forEach((E, k) => {
+      for (const pose of ['parada', 'sentada']) { const p = pessoa(lado, 0, pose, E); s[`visita${k}-${lado}-${pose}`] = p; s[`visita${k}-${lado}-${pose}-esp`] = p.espelhar(); }
+      for (let q = 0; q < 4; q++) { const p = pessoa(lado, q, 'andando', E); s[`visita${k}-${lado}-andando${q}`] = p; s[`visita${k}-${lado}-andando${q}-esp`] = p.espelhar(); }
+    });
+  }
   return s;
+}
+// As visitas: duas aparências genéricas (ninguém de verdade), só para ver quem chegou.
+const VISITAS = [estiloJean({ pele: 2, cabelo: 'cacheado', cor_cabelo: 'preto', camisa: 'vinho', calca: 'preta', sapato: 'preto' }),
+  estiloJean({ pele: 0, cabelo: 'medio', cor_cabelo: 'loiro', camisa: 'amarela', calca: 'bege', sapato: 'marrom' })];
+// A Morgan: uma criança de uns 8 anos, 12 x 24, de rabo de cavalo e vestido (o mesmo jeito de desenhar da Pepper, menor).
+function crianca(lado, quadro, pose) {
+  const p = new Pincel(14, 26); const C = PAL; const roupa = C.amarelo, roupaClara = claro(C.amarelo, 0.35), cabelo = '#5a3320', cabeloClaro = '#7d4a2e';
+  const passo = pose === 'andando' ? [0, 1, 0, -1][quadro] : 0; const sobe = pose === 'andando' && quadro % 2 === 1 ? -1 : 0;
+  const sentada = pose === 'sentada'; const y0 = (sentada ? 3 : 0) + sobe + 1; const x0 = 1;
+  if (sentada) { p.retangulo(x0 + 3, y0 + 18, 3, 2, C.pele); p.retangulo(x0 + 6, y0 + 18, 3, 2, C.pele); p.retangulo(x0 + 3, y0 + 20, 3, 1, C.rosa); p.retangulo(x0 + 6, y0 + 20, 3, 1, C.rosa); }
+  else { p.retangulo(x0 + 3, y0 + 18 + Math.max(0, passo), 2, 4 - Math.abs(passo), C.pele); p.retangulo(x0 + 7, y0 + 18 + Math.max(0, -passo), 2, 4 - Math.abs(passo), C.pele);
+    p.retangulo(x0 + 3, y0 + 22, 2, 1, C.rosa); p.retangulo(x0 + 7, y0 + 22, 2, 1, C.rosa); }
+  p.retangulo(x0 + 2, y0 + 11, 8, 8, roupa); p.retangulo(x0 + 3, y0 + 12, 3, 5, roupaClara); p.retangulo(x0 + 1, y0 + 17, 10, 2, roupa);
+  p.retangulo(x0 + 1, y0 + 12 + passo, 1, 5, C.pele); p.retangulo(x0 + 10, y0 + 12 - passo, 1, 5, C.pele);
+  p.retangulo(x0 + 3, y0 + 3, 6, 8, C.pele);
+  if (lado === 'frente') { p.retangulo(x0 + 2, y0 + 1, 8, 3, cabelo); p.retangulo(x0 + 3, y0 + 1, 6, 1, cabeloClaro); p.retangulo(x0 + 2, y0 + 3, 1, 4, cabelo);
+    p.ponto(x0 + 5, y0 + 6, C.preto); p.ponto(x0 + 8, y0 + 6, C.preto); p.ponto(x0 + 4, y0 + 8, C.rosaClaro); p.ponto(x0 + 9, y0 + 8, C.rosaClaro); p.retangulo(x0 + 6, y0 + 9, 2, 1, C.rosa);
+    p.retangulo(x0 + 10, y0 + 2, 2, 5, cabelo); p.ponto(x0 + 10, y0 + 2, C.vermelho); }
+  else { p.retangulo(x0 + 2, y0 + 1, 8, 8, cabelo); p.retangulo(x0 + 3, y0 + 1, 6, 1, cabeloClaro); p.retangulo(x0 + 5, y0 + 8, 2, 4, cabelo); p.ponto(x0 + 5, y0 + 7, C.vermelho); }
+  p.contornar(); return p;
 }
 
 // Uma textura macia de luz (o halo): um degradê redondo, do centro para fora.

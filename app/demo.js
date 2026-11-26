@@ -243,14 +243,22 @@ function entradaDemo(caminho, c, estado) {
 
 // O jogo (JG) com a casa de exemplo: a cada 25 s ela muda de atividade, para ver ela andar até o objeto. As luzes da sala
 // acendem à noite, como no servidor (o 68 decide de verdade).
+const MESA_MORGAN = { onde: 'casa', visivel: true, objeto: 'mesa-jantar', pose: 'sentada', x: 11.4, y: 2.6 };
 const ATIVIDADES = [
-  { atividade: 'lendo no sofá', objeto: 'sofa', pose: 'sentada', balao: 'livro', humor: 'contente' },
-  { atividade: 'cozinhando o jantar', objeto: 'fogao', pose: 'parada', balao: 'panela', humor: 'contente' },
-  { atividade: 'trabalhando no notebook', objeto: 'mesa-trabalho', pose: 'sentada', balao: 'notebook', humor: 'concentrada' },
-  { atividade: 'jantando', objeto: 'mesa-jantar', pose: 'sentada', balao: 'comida', humor: 'contente' },
-  { atividade: 'no banho', privado: true, balao: 'porta', humor: 'calma' },
-  { atividade: 'lendo na poltrona', objeto: 'poltrona', pose: 'sentada', balao: 'livro', humor: 'calma' },
-  { atividade: 'dormindo', objeto: 'cama', pose: 'deitada', balao: 'zzz', humor: 'calma' },
+  { atividade: 'lendo no sofá', objeto: 'sofa', pose: 'sentada', balao: 'livro', humor: 'contente', celular: 'perto',
+    morgan: { onde: 'casa', visivel: true, objeto: 'tapete-sala', pose: 'sentada', balao: 'brinquedo', atividade: 'brincando', x: 3.5, y: 6.4 } },
+  { atividade: 'cozinhando o jantar', objeto: 'fogao', pose: 'parada', balao: 'panela', humor: 'contente', celular: 'perto',
+    sentidos: { cheiros: ['alho', 'cebola'], sons: ['a panela chiando'], fumaca: true, vapor: false, panela: { receita: 'Macarrão ao alho', ingredientes: ['macarrão', 'alho'] } },
+    morgan: { ...MESA_MORGAN, balao: 'livro', atividade: 'fazendo a lição' } },
+  { atividade: 'trabalhando no notebook', objeto: 'mesa-trabalho', pose: 'sentada', balao: 'notebook', humor: 'concentrada', celular: 'mao', morgan: { onde: 'escola', visivel: false } },
+  { atividade: 'vendo TV com uma amiga', objeto: 'sofa', pose: 'sentada', balao: 'tv', humor: 'contente', celular: 'perto', morgan: { onde: 'escola', visivel: false },
+    visitas: [{ nome: 'Amiga', objeto: 'pufe', x: 5.75, y: 7.2, pose: 'sentada' }], tv: { ligada: true, canal: 3, volume: 4, programa: 'Fórmula 1' } },
+  { atividade: 'jantando', objeto: 'mesa-jantar', pose: 'sentada', balao: 'comida', humor: 'contente', celular: 'perto', prato: { nome: 'Macarrão ao alho', porcoes: 2, onde: 'mesa-jantar' },
+    morgan: { ...MESA_MORGAN, balao: 'comida', atividade: 'comendo' } },
+  { atividade: 'no banho', privado: true, balao: 'porta', humor: 'calma', celular: 'perto', sentidos: { cheiros: [], sons: ['o chuveiro'], fumaca: false, vapor: true },
+    morgan: { onde: 'casa', visivel: true, objeto: 'pufe', pose: 'sentada', balao: 'tv', atividade: 'vendo desenho', x: 5.75, y: 7.2 }, tv: { ligada: true, canal: 5, volume: 3, programa: 'Desenho' } },
+  { atividade: 'lendo na poltrona', objeto: 'poltrona', pose: 'sentada', balao: 'livro', humor: 'calma', celular: 'perto', morgan: { onde: 'casa', visivel: false, atividade: 'dormindo no quarto dela' } },
+  { atividade: 'dormindo', objeto: 'cama', pose: 'deitada', balao: 'zzz', humor: 'calma', celular: 'criado', morgan: { onde: 'casa', visivel: false, atividade: 'dormindo no quarto dela' } },
 ];
 let mapaDemo = null; let jogoEstado = null;
 // Uma casa inventada para o Jean na demonstração (a de verdade fica só no banco privado, DEC-176).
@@ -282,9 +290,10 @@ async function jogoDemo(c) {
     else if (c.op === 'limpar') e.sujeira = 0; else if (c.op === 'encher') { e.racao = 100; e.agua = 100; } else if (c.op === 'assistir_junto') return { ok: false, erro: 'Para assistir junto, você precisa estar lá, perto dela, com ela no sofá.' };
     if (c.item === 'gato') { E.gato.acao = 'ronronando'; E.gato.necessidades.carinho = 95; } }
   if (c.acao === 'mover' && c.op === 'soltar') { const it = mapaDemo.itens.find((i) => i.id === c.item); if (it) { it.x = c.valor.x; it.y = c.valor.y; mapaDemo.versao = (mapaDemo.versao || 1) + 1; } }
-  const pepper = ATIVIDADES[Math.floor(Date.now() / 25000) % ATIVIDADES.length];
+  const { tv: tvDaVez, ...pepper } = ATIVIDADES[Math.floor(Date.now() / 25000) % ATIVIDADES.length];
+  const itensDaVez = tvDaVez ? { ...E.itens, tv: { ...E.itens.tv, ...tvDaVez } } : E.itens;
   return { mapa_id: naJean ? 'casa-jean' : 'casa-pepper', mapa: naJean ? CASA_JEAN_DEMO : mapaDemo, pepper: { ...pepper, necessidades: { fome: 62, energia: 48, higiene: 80, bexiga: 70, diversao: 55, social: 66, conforto: 74, ambiente: 68, saude: 92, estresse: 30 } },
-    itens: naJean ? { 'abajur-chao': { ligada: true, brilho: 85 } } : E.itens, gato: E.gato, casa: E.casa, clima: 'chuva', reacao, avisos: [], jean: { ...J }, agora: new Date().toISOString() };
+    itens: naJean ? { 'abajur-chao': { ligada: true, brilho: 85 } } : itensDaVez, gato: E.gato, casa: E.casa, clima: 'chuva', reacao, avisos: [], jean: { ...J }, agora: new Date().toISOString() };
 }
 // O celular do jogo na demonstração (o 69 de verdade lê o banco).
 function celularDemo(c) {
