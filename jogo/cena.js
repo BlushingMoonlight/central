@@ -397,7 +397,7 @@ export function criarJogo(Phaser, pai, op) {
     atualizar(c) {
       this.estado = c;
       if (c.mapa && (c.mapa.versao !== this.mapaTodo.versao || (c.mapa.id || 'casa-pepper') !== (this.mapaTodo.id || 'casa-pepper')) && !this.construindo) {
-        const outroMapa = (c.mapa.id || 'casa-pepper') !== (this.mapaTodo.id || 'casa-pepper'); this.remontar(c.mapa, outroMapa ? 0 : this.andar); if (outroMapa) this.pepper.visivel = false; }
+        const outroMapa = (c.mapa.id || 'casa-pepper') !== (this.mapaTodo.id || 'casa-pepper'); this.remontar(c.mapa, outroMapa ? 0 : this.andar); if (outroMapa) { this.pepper.visivel = false; this.pepper.saiuDoPrivado = false; } }
       this.clima = c.clima || 'sol';
       this.aplicarItens(c);
       this.atualizarJean(c.jean);
@@ -410,7 +410,7 @@ export function criarJogo(Phaser, pai, op) {
       if (c.reacao) this.pepper.balaoTemp = { tipo: c.reacao === 'assombracao' ? 'susto' : c.reacao === 'viu_jean' ? 'coracao' : 'pergunta', ate: this.time.now + 20000 };
       const gs = c.gato; this.gato.vivo = !!gs && !!this.mapa.pontos.gato; this.spGato.setVisible(this.gato.vivo); if (gs && gs.acao !== this.gato.acao) { this.gato.acao = gs.acao; this.gato.proxima = 0; }
       const pp = c.pepper || {}; const m = this.mapa;
-      if (this.andar !== 0) { this.pepper.visivel = false; return; }
+      if (this.andar !== 0) { this.pepper.visivel = false; this.pepper.saiuDoPrivado = false; return; }
       let destino = null, pose = 'parada', dir = 'se';
       if (pp.fora) destino = { ...m.pontos.porta, sumir: true };
       else if (pp.privado) destino = { ...m.pontos.banheiro || { x: 10.6, y: 8.5 }, sumir: true, privado: true };
@@ -418,7 +418,19 @@ export function criarJogo(Phaser, pai, op) {
         if (!it2) return; const u = (it2.uso || [])[0] || { x: it2.x + it2.w / 2, y: it2.y + it2.d + 0.3 };
         destino = { x: u.x, y: u.y, item: it2.id }; pose = u.pose || pp.pose || 'parada'; dir = u.dir || 'se'; }
       const p = this.pepper; p.balao = pp.balao || null; p.privado = false;
-      if (!p.visivel && !pp.fora) { p.x = m.pontos.porta.x; p.y = m.pontos.porta.y; p.visivel = true; }
+      // O jogo é a janela de um mundo que já está rodando (conserto de 26/11, B-008): ao abrir, ao voltar do segundo plano,
+      // ao reconectar ou ao voltar ao térreo, ela já está no lugar da atividade, na pose. Só entra pela porta quando chega
+      // da rua de verdade (ela estava fora e voltou); no meio de um trajeto (x e y do servidor), continua dali; ao sair do
+      // banheiro, sai de lá. Depois de mais de 2 minutos sem notícia, vai direto para onde o servidor diz.
+      const agora = Date.now(); const sumiu = this.vistaEm && agora - this.vistaEm > 120000; this.vistaEm = agora;
+      const estavaFora = p.estavaFora === true; p.estavaFora = !!pp.fora;
+      if (!pp.fora && (!p.visivel || sumiu)) {
+        const tx = Number(pp.x), ty = Number(pp.y);
+        if (!p.visivel && estavaFora) { p.x = m.pontos.porta.x; p.y = m.pontos.porta.y; }
+        else if (pp.x != null && pp.y != null && Number.isFinite(tx) && Number.isFinite(ty)) { p.x = tx; p.y = ty; }
+        else if (!(p.saiuDoPrivado && !sumiu)) { p.x = destino.x; p.y = destino.y; p.alvo = destino; p.poseFinal = pose; p.dirFinal = dir; p.visivel = true; p.saiuDoPrivado = false; this.chegou(); return; }
+        p.visivel = true; p.saiuDoPrivado = false; p.alvo = null;
+      }
       if (p.alvo && p.alvo.x === destino.x && p.alvo.y === destino.y) return;
       p.alvo = destino; p.poseFinal = pose; p.dirFinal = dir; p.pose = 'andando';
       const g = grade(m, destino.item ? [destino.item] : []);
@@ -439,7 +451,7 @@ export function criarJogo(Phaser, pai, op) {
         j.andar = sa; }
       j.visivel = true;
     }
-    chegou() { const p = this.pepper; p.pose = p.poseFinal; p.caminho = []; if (p.alvo.sumir) { p.visivel = false; p.privado = !!p.alvo.privado; }
+    chegou() { const p = this.pepper; p.pose = p.poseFinal; p.caminho = []; if (p.alvo.sumir) { p.visivel = false; p.privado = !!p.alvo.privado; p.saiuDoPrivado = !!p.alvo.privado; }
       const d = p.dirFinal; p.lado = d === 'ne' || d === 'nw' ? 'costas' : 'frente'; p.esp = d === 'sw' || d === 'nw'; }
     andarPor(o, dt, vel) {
       const alvo = o.caminho[0]; if (!alvo) return false;
