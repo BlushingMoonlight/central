@@ -56,6 +56,29 @@ export function caminho(g, de, para) {
   pts.push({ x: para.x, y: para.y }); return pts;
 }
 
+// A rota que o servidor manda (o 68, parte B): os pontos [x, y] na grade do mapa. Ela anda 1 bloco por segundo, como lá.
+export const VEL_ROTA = 1;
+const comprimento = (r) => { let s = 0; for (let i = 1; i < r.length; i++) s += Math.hypot(r[i].x - r[i - 1].x, r[i].y - r[i - 1].y); return s; };
+// Quanto da rota já foi andado até o ponto (x, y): a projeção no trecho mais perto.
+export function projetar(r, x, y) {
+  let melhor = Infinity, andado = 0, ate = 0;
+  for (let i = 1; i < r.length; i++) { const a = r[i - 1], b = r[i]; const dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy);
+    const f = l ? Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / (l * l))) : 0; const d = Math.hypot(a.x + dx * f - x, a.y + dy * f - y);
+    if (d < melhor) { melhor = d; andado = ate + l * f; } ate += l; }
+  return andado;
+}
+// O que falta da rota depois de andar "andado" blocos (o primeiro ponto é onde ela está agora); [] se já acabou.
+export function restoDaRota(r, andado) {
+  let falta = Math.max(0, andado);
+  for (let i = 1; i < r.length; i++) { const a = r[i - 1], b = r[i]; const l = Math.hypot(b.x - a.x, b.y - a.y);
+    if (falta < l) { const f = l ? falta / l : 1; return [{ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f }, ...r.slice(i)]; } falta -= l; }
+  return [];
+}
+const pontosDe = (r) => (Array.isArray(r) && r.length > 1 ? r.map((q) => (Array.isArray(q) ? { x: Number(q[0]), y: Number(q[1]) } : { x: Number(q.x), y: Number(q.y) })).filter((q) => Number.isFinite(q.x) && Number.isFinite(q.y)) : null);
+// O programa da TV vira uma cena genérica na tela (nada de marca nem de imagem de verdade).
+export const tipoDePrograma = (t) => (/videogame/i.test(t || '') ? 'videogame' : /f1|f[óo]rmula|corrida|futebol|basquete|nba|nfl|copa|jogo d|esporte|t[êe]nis|v[ôo]lei/i.test(t || '') ? 'esporte'
+  : /not[íi]cia|jornal/i.test(t || '') ? 'noticia' : /desenho/i.test(t || '') ? 'desenho' : 'serie');
+
 // ---------------------------------------------------------------- a luz
 // A escuridão pela hora de Nova York (0 = dia claro; ~0,66 = noite), contínua, sem salto.
 export function escuridao(h) {
@@ -221,7 +244,8 @@ export function criarJogo(Phaser, pai, op) {
       this.mapaTodo = mapa; this.andar = andar; this.mapa = doAndar(mapa, andar); this.cancelarMover();
       this.montar(); this.montarLuz(); this.redesenharLuz();
       const gp = (this.mapa.pontos || {}).gato; this.gGato = grade(this.mapa, ['caminha-gato', 'sofa', 'cama', 'tapete-sala']); if (this.gato) { this.gato.caminho = []; this.gato.proxima = 0; if (!gp) this.gato.vivo = false; }
-      if (this.pepper) { this.pepper.alvo = null; this.pepper.caminho = []; }
+      if (this.pepper) { this.pepper.alvo = null; this.pepper.caminho = []; this.pepper.fade = null; }
+      for (const o of [this.morgan, ...(this.visitas || [])]) if (o) { o.alvo = null; o.caminho = []; o.saindo = false; }
       if (this.estado) this.aplicarItens(this.estado);
     }
     redesenharLuz() {
@@ -252,6 +276,59 @@ export function criarJogo(Phaser, pai, op) {
       this.definirJean({});
       this.jean = { x: p0.x, y: p0.y, andar: 0, caminho: [], lado: 'frente', esp: false, quadro: 0, t: 0, visivel: false, mexeuEm: 0 };
       this.spJean = this.add.image(0, 0, 'jean-frente-parada').setOrigin(9 / 18, 32 / 34).setVisible(false);
+      // Parte B: a Morgan, as duas visitas, o que ela leva na mão, o celular, o prato, a fumaça, o vapor e a tela da TV.
+      const figura = () => ({ x: p0.x, y: p0.y, caminho: [], lado: 'frente', esp: false, quadro: 0, t: 0, visivel: false, alvo: null, pose: 'parada', saindo: false });
+      this.morgan = { ...figura(), onde: null, banho: false };
+      this.spMorgan = this.add.image(0, 0, 'morgan-frente-parada').setOrigin(7 / 14, 24 / 26).setVisible(false);
+      this.spBalaoMorgan = this.add.image(0, 0, 'balao-tv').setOrigin(0.5, 1).setDepth(1003).setVisible(false);
+      this.visitas = [figura(), figura()];
+      this.spVisitas = this.visitas.map((v, k) => this.add.image(0, 0, `visita${k}-frente-parada`).setOrigin(9 / 18, 32 / 34).setVisible(false));
+      this.spBalaoVisita = this.add.image(0, 0, 'balao-conversa').setOrigin(0.5, 1).setDepth(1003).setVisible(false);
+      const det = (k, ox = 0.5, oy = 1) => this.add.image(0, 0, 'det-' + k).setOrigin(ox, oy).setVisible(false);
+      this.spCel = det('celular'); this.spCelCriado = det('celular_deitado', 0.5, 0.5); this.spLeva = det('prato_mao'); this.spPrato = det('prato', 0.5, 0.5);
+      this.fumaca = [0, 1, 2, 3].map(() => det('fumaca', 0.5, 0.5).setDepth(1003)); this.vapor = [0, 1, 2, 3].map(() => det('vapor', 0.5, 0.5).setDepth(1003));
+      this.tvTela = this.add.graphics().setVisible(false);
+      this.b = { sentidos: {}, celular: null, prato: null, leva: null };
+    }
+    // Ela some e aparece no lugar (o vigia, ou um lugar sem caminho): nunca um pulo na frente do Jean (DEC-190).
+    esmaecer(d) { const p = this.pepper; p.caminho = []; p.fade = { t0: this.time.now, x: d.x, y: d.y, trocou: false }; }
+    // Os itens embaixo de um ponto (o lugar de sentar no tapete, embaixo da mesinha): não bloqueiam quem vai até ali.
+    itensEm(d) { return this.mapa.itens.filter((i) => !i.chao && d.x >= i.x && d.x <= i.x + i.w && d.y >= i.y && d.y <= i.y + i.d).map((i) => i.id); }
+    // Junta a posição de agora ao começo de uma rota: se ela está longe do primeiro ponto, anda até ele pela grade.
+    ligar(o, pts, livres = []) { if (!pts.length) return pts; const a = pts[0]; if (Math.hypot(a.x - o.x, a.y - o.y) <= 0.6) return pts;
+      const ida = caminho(grade(this.mapa, [...livres, ...this.itensEm(a), ...this.itensEm(o)]), o, a); return ida.length ? [...ida, ...pts.slice(1)] : pts; }
+    // A Morgan (DEC-188, item 5): onde a rotina dela diz. Chega da escola (ou da rua com a Pepper) pela porta e sai por ela;
+    // na casa, anda até o lugar novo (nunca pula). Ao abrir o jogo, ela já está lá.
+    atualizarMorgan(mg, direto) {
+      const g = this.morgan; const m = this.mapa; const porta = m.pontos.porta; const antes = g.onde; g.onde = mg ? mg.onde : null;
+      g.banho = !!(mg && mg.onde === 'casa' && !mg.visivel && /banho/i.test(mg.atividade || ''));
+      const vis = !!(mg && mg.onde === 'casa' && mg.visivel && mg.x != null && mg.y != null && Number.isFinite(Number(mg.x)) && Number.isFinite(Number(mg.y)));
+      if (!vis) {
+        const saiu = mg && (mg.onde === 'escola' || mg.onde === 'com_ela');
+        if (g.visivel && saiu && !direto) { if (!g.saindo) { g.saindo = true; g.alvo = null; g.caminho = caminho(grade(m, this.itensEm(g)), g, porta); if (!g.caminho.length) g.visivel = false; } }
+        else { g.visivel = false; g.saindo = false; }
+        return;
+      }
+      g.saindo = false; g.pose = mg.pose || 'parada'; g.balao = mg.balao || null; g.objeto = mg.objeto || null; const d = { x: Number(mg.x), y: Number(mg.y) };
+      // À mesa, do outro lado: o ponto do servidor cai dentro do tampo; ela senta na beira de trás, com a cabeça à vista.
+      const mesa = m.itens.find((i) => i.id === g.objeto && i.modelo === 'mesa_jantar'); if (mesa && d.y > mesa.y - 0.4 && d.y < mesa.y + mesa.d && d.x >= mesa.x && d.x <= mesa.x + mesa.w) d.y = mesa.y - 0.4;
+      if (!g.visivel || direto) { const veio = !direto && (antes === 'escola' || antes === 'com_ela');
+        if (!veio) { g.visivel = true; g.x = d.x; g.y = d.y; g.caminho = []; g.alvo = d; g.lado = 'frente'; g.esp = false; return; }
+        g.visivel = true; g.x = porta.x; g.y = porta.y; g.alvo = null; }
+      if (g.alvo && g.alvo.x === d.x && g.alvo.y === d.y) return; g.alvo = d;
+      g.caminho = caminho(grade(m, [g.objeto, ...this.itensEm(d), ...this.itensEm(g)].filter(Boolean)), g, d); if (!g.caminho.length) { g.x = d.x; g.y = d.y; }
+    }
+    // As visitas do cânone (DEC-188, item 5): chegam pela porta, sentam na sala e vão embora pela porta.
+    atualizarVisitas(lista, direto) {
+      const m = this.mapa; const porta = m.pontos.porta;
+      this.visitas.forEach((st, k) => {
+        const v = (lista || [])[k]; const ok = v && v.x != null && v.y != null && Number.isFinite(Number(v.x)) && Number.isFinite(Number(v.y));
+        if (!ok) { if (st.visivel && !direto) { if (!st.saindo) { st.saindo = true; st.alvo = null; st.caminho = caminho(grade(m, this.itensEm(st)), st, porta); if (!st.caminho.length) st.visivel = false; } } else { st.visivel = false; st.saindo = false; } return; }
+        st.saindo = false; st.nome = v.nome || ''; st.pose = v.pose || 'sentada'; const d = { x: Number(v.x), y: Number(v.y) };
+        if (!st.visivel) { st.visivel = true; if (direto) { st.x = d.x; st.y = d.y; st.caminho = []; st.alvo = d; return; } st.x = porta.x; st.y = porta.y; st.alvo = null; }
+        if (st.alvo && st.alvo.x === d.x && st.alvo.y === d.y) return; st.alvo = d;
+        st.caminho = caminho(grade(m, [v.objeto, ...this.itensEm(d), ...this.itensEm(st)].filter(Boolean)), st, d); if (!st.caminho.length) { st.x = d.x; st.y = d.y; }
+      });
     }
     montarCamera() {
       const cam = this.cameras.main; this.desvio = { x: 0, y: 0 }; this.arrastando = null;
@@ -410,13 +487,23 @@ export function criarJogo(Phaser, pai, op) {
       if (c.reacao) this.pepper.balaoTemp = { tipo: c.reacao === 'assombracao' ? 'susto' : c.reacao === 'viu_jean' ? 'coracao' : 'pergunta', ate: this.time.now + 20000 };
       const gs = c.gato; this.gato.vivo = !!gs && !!this.mapa.pontos.gato; this.spGato.setVisible(this.gato.vivo); if (gs && gs.acao !== this.gato.acao) { this.gato.acao = gs.acao; this.gato.proxima = 0; }
       const pp = c.pepper || {}; const m = this.mapa;
-      if (this.andar !== 0) { this.pepper.visivel = false; this.pepper.saiuDoPrivado = false; return; }
+      this.b = { sentidos: pp.sentidos || {}, celular: pp.celular || null, prato: pp.prato || null, leva: (pp.acao || {}).leva || null };
+      if (this.andar !== 0) { this.pepper.visivel = false; this.pepper.saiuDoPrivado = false; this.morgan.visivel = false; this.visitas.forEach((v) => { v.visivel = false; }); return; }
+      const direto = !this.vistaEm || Date.now() - this.vistaEm > 120000;
+      this.atualizarMorgan(pp.morgan, direto); this.atualizarVisitas(pp.visitas, direto);
       let destino = null, pose = 'parada', dir = 'se';
+      // Indo, a rota do servidor manda: o fim dela é o lugar (DEC-188, item 2).
+      const rota0 = !pp.fora && !pp.privado && (pp.acao || {}).fase !== 'fazendo' ? pontosDe(pp.rota) : null; const rota = rota0 && rota0.length > 1 ? rota0 : null;
       if (pp.fora) destino = { ...m.pontos.porta, sumir: true };
       else if (pp.privado) destino = { ...m.pontos.banheiro || { x: 10.6, y: 8.5 }, sumir: true, privado: true };
-      else { const it2 = m.itens.find((i) => i.id === pp.objeto) || m.itens.find((i) => i.id === 'sofa') || m.itens.find((i) => !i.fora && !i.chao);
-        if (!it2) return; const u = (it2.uso || [])[0] || { x: it2.x + it2.w / 2, y: it2.y + it2.d + 0.3 };
-        destino = { x: u.x, y: u.y, item: it2.id }; pose = u.pose || pp.pose || 'parada'; dir = u.dir || 'se'; }
+      else {
+        // Fazendo, o servidor manda o lugar exato (x, y); sem objeto (espreguiçar, olhar a janela), o lugar é o ponto dele.
+        const temXY = pp.x != null && pp.y != null && Number.isFinite(Number(pp.x)) && Number.isFinite(Number(pp.y)); const fazendo = temXY && (pp.acao || {}).fase === 'fazendo';
+        const semObjeto = !pp.objeto && (fazendo || rota);
+        const it2 = m.itens.find((i) => i.id === pp.objeto) || (semObjeto ? null : m.itens.find((i) => i.id === 'sofa') || m.itens.find((i) => !i.fora && !i.chao));
+        if (!it2 && !semObjeto) return; const u = (it2 && (it2.uso || [])[0]) || (fazendo || !it2 ? { x: Number(pp.x), y: Number(pp.y) } : { x: it2.x + it2.w / 2, y: it2.y + it2.d + 0.3 });
+        destino = { x: fazendo ? Number(pp.x) : u.x, y: fazendo ? Number(pp.y) : u.y, item: it2 ? it2.id : null }; pose = u.pose || (pp.pose !== 'andando' && pp.pose) || 'parada'; dir = u.dir || pp.dir || 'se'; }
+      if (rota) { const fim = rota[rota.length - 1]; destino = { ...destino, x: fim.x, y: fim.y }; }
       const p = this.pepper; p.balao = pp.balao || null; p.privado = false;
       // O jogo é a janela de um mundo que já está rodando (conserto de 26/11, B-008): ao abrir, ao voltar do segundo plano,
       // ao reconectar ou ao voltar ao térreo, ela já está no lugar da atividade, na pose. Só entra pela porta quando chega
@@ -428,13 +515,25 @@ export function criarJogo(Phaser, pai, op) {
         const tx = Number(pp.x), ty = Number(pp.y);
         if (!p.visivel && estavaFora) { p.x = m.pontos.porta.x; p.y = m.pontos.porta.y; }
         else if (pp.x != null && pp.y != null && Number.isFinite(tx) && Number.isFinite(ty)) { p.x = tx; p.y = ty; }
-        else if (!(p.saiuDoPrivado && !sumiu)) { p.x = destino.x; p.y = destino.y; p.alvo = destino; p.poseFinal = pose; p.dirFinal = dir; p.visivel = true; p.saiuDoPrivado = false; this.chegou(); return; }
-        p.visivel = true; p.saiuDoPrivado = false; p.alvo = null;
+        else if (!(p.saiuDoPrivado && !sumiu)) { p.x = destino.x; p.y = destino.y; p.alvo = destino; p.poseFinal = pose; p.dirFinal = dir; p.visivel = true; p.saiuDoPrivado = false; p.fade = null; this.chegou(); return; }
+        p.visivel = true; p.saiuDoPrivado = false; p.alvo = null; p.fade = null;
+        if (Math.hypot(p.x - destino.x, p.y - destino.y) < 0.05) { p.alvo = destino; p.poseFinal = pose; p.dirFinal = dir; this.chegou(); return; }
       }
+      const srv = Date.parse(c.agora) || Date.now(); const desde = (pp.acao || {}).desde || null;
+      // O vigia (DEC-190): ninguém alcança nada, ela esmaece e aparece no lugar livre.
+      if (pp.esmaecer && desde !== p.esmaecerDe) { p.esmaecerDe = desde; p.alvo = destino; p.poseFinal = pose; p.dirFinal = dir; this.esmaecer(destino); return; }
+      // O desvio (DEC-188, item 2): ocupada, ela vai até o item, mexe e volta, sem largar o que fazia.
+      const dv = pp.desvio; const rd = dv && pontosDe(dv.rota);
+      if (rd && dv.em !== p.desvioEm) { p.desvioEm = dv.em; const resto = restoDaRota(rd, (srv - Date.parse(dv.em)) / 1000 * VEL_ROTA);
+        if (resto.length > 1) { const livres = [destino.item, p.alvo && p.alvo.item].filter(Boolean); p.alvo = destino; p.poseFinal = pose; p.dirFinal = dir; p.pose = 'andando'; p.vel = VEL_ROTA; p.caminho = this.ligar(p, resto, livres); return; } }
       if (p.alvo && p.alvo.x === destino.x && p.alvo.y === destino.y) return;
-      p.alvo = destino; p.poseFinal = pose; p.dirFinal = dir; p.pose = 'andando';
-      const g = grade(m, destino.item ? [destino.item] : []);
-      p.caminho = caminho(g, p, destino); if (!p.caminho.length) { p.x = destino.x; p.y = destino.y; this.chegou(); }
+      // O item onde ela está (o sofá, a cama) não a prende: ela sai dele.
+      const onde = p.alvo && p.alvo.item; p.alvo = destino; p.poseFinal = pose; p.dirFinal = dir; p.pose = 'andando';
+      if (rota) { p.vel = VEL_ROTA; const resto = restoDaRota(rota, projetar(rota, pp.x != null ? Number(pp.x) : p.x, pp.y != null ? Number(pp.y) : p.y));
+        p.caminho = this.ligar(p, resto.length ? resto : [rota[rota.length - 1]], [destino.item, onde].filter(Boolean)); }
+      else { p.vel = 1.6; p.caminho = caminho(grade(m, [destino.item, onde, ...this.itensEm(destino), ...this.itensEm(p)].filter(Boolean)), p, destino); }
+      // Sem caminho, nunca um pulo: ela esmaece e aparece lá.
+      if (!p.caminho.length) { if (Math.hypot(p.x - destino.x, p.y - destino.y) < 0.05) this.chegou(); else this.esmaecer(destino); }
     }
     aplicarItens(c) { for (const l of this.luzes) { const e = (c.itens || {})[l.id] || {}; l.ligada = e.ligada === true; l.brilho = Number.isFinite(e.brilho) ? e.brilho : 100; if (e.cor) l.cor = e.cor; }
       const it = c.itens || {}; this.tv = it.tv || {}; this.toca = it['toca-discos'] || {}; this.redesenharLuz(); }
@@ -475,18 +574,22 @@ export function criarJogo(Phaser, pai, op) {
     }
     update(t, dt) {
       const p = this.pepper; const cam = this.cameras.main;
-      if (p.caminho.length) { this.andarPor(p, dt, 1.6); p.t += dt; if (p.t > 140) { p.t = 0; p.quadro = (p.quadro + 1) % 4; } if (!p.caminho.length) this.chegou(); }
+      if (p.caminho.length) { this.andarPor(p, dt, p.vel || 1.6); p.t += dt; if (p.t > 140) { p.t = 0; p.quadro = (p.quadro + 1) % 4; } if (!p.caminho.length) this.chegou(); }
+      let alfa = 1; if (p.fade) { const f = (t - p.fade.t0) / 900; if (f >= 0.5 && !p.fade.trocou) { p.fade.trocou = true; p.x = p.fade.x; p.y = p.fade.y; if (p.alvo) this.chegou(); }
+        alfa = f < 0.5 ? 1 - 2 * f : Math.min(1, 2 * f - 1); if (f >= 1) p.fade = null; }
       const deitada = p.pose === 'deitada' && !p.caminho.length; const dela = this.dela && this.andar === 0;
       const [wx, wy] = iso(p.x, p.y);
       this.spPepper.setVisible(dela && p.visivel && !deitada).setPosition(wx, wy).setDepth(profundidadePessoa(p.x, p.y) + (p.pose === 'sentada' ? 0.6 : 0))
-        .setTexture(`pepper-${p.lado}-${p.caminho.length ? 'andando' + p.quadro : p.pose === 'sentada' ? 'sentada' : 'parada'}${p.esp ? '-esp' : ''}`);
+        .setTexture(`pepper-${p.lado}-${p.caminho.length ? 'andando' + p.quadro : p.pose === 'sentada' ? 'sentada' : 'parada'}${p.esp ? '-esp' : ''}`).setAlpha(alfa);
       if (dela && deitada) { const cama = this.mapa.itens.find((i) => i.id === p.alvo.item) || { x: p.x, y: p.y, w: 1 }; const [hx, hy] = iso(cama.x + 0.55, cama.y + 0.55, 17);
         this.spCabeca.setVisible(true).setPosition(hx, hy).setDepth(profundidade(cama) + 0.01); } else this.spCabeca.setVisible(false);
       const topo = deitada ? [this.spCabeca.x, this.spCabeca.y - 10] : [wx, wy - 34];
       const temp = p.balaoTemp && p.balaoTemp.ate > t ? p.balaoTemp.tipo : null;
       const bal = p.caminho.length ? null : temp || (deitada ? 'zzz' : p.balao);
-      this.spBalao.setVisible(dela && p.visivel && !!bal).setPosition(topo[0] + 4, topo[1] + Math.round(Math.sin(t / 500))); if (bal) this.spBalao.setTexture('balao-' + bal);
-      this.spPorta.setVisible(dela && !!p.privado && !!this.portaBanheiro); if (this.portaBanheiro) this.spPorta.setPosition(this.portaBanheiro.wx, this.portaBanheiro.wy);
+      const temBal = !!bal && this.textures.exists('balao-' + bal);
+      this.spBalao.setVisible(dela && p.visivel && temBal && !p.fade).setPosition(topo[0] + 4, topo[1] + Math.round(Math.sin(t / 500))); if (temBal) this.spBalao.setTexture('balao-' + bal);
+      this.spPorta.setVisible(dela && (!!p.privado || this.morgan.banho) && !!this.portaBanheiro);
+      this.viverJuntos(t, dt, dela); this.viverSentidos(t, dela, deitada, wx, wy, alfa); if (this.portaBanheiro) this.spPorta.setPosition(this.portaBanheiro.wx, this.portaBanheiro.wy);
       if (dela) this.viverGato(t, dt); else { this.spGato.setVisible(false); this.spBalaoGato.setVisible(false); }
       this.viverJean(t, dt); this.vidaMiuda(t, dt);
       // a câmera: segue a Pepper, o Jean ou fica livre; o desvio do dedo volta sozinho
@@ -505,6 +608,62 @@ export function criarJogo(Phaser, pai, op) {
       cam.scrollY += ((foco[1] + dv.y - cam.height / 2) - cam.scrollY) * 0.08;
       if (aoDiagnostico) aoDiagnostico({ fps: this.game.loop.actualFps, luzes: this.diag.luzes, total: this.diag.total, escala: this.escala, w: Math.round(this.scale.width / this.escala), h: Math.round(this.scale.height / this.escala),
         renderer: this.game.renderer.type === Phaser.WEBGL ? 'WebGL' : 'Canvas' });
+    }
+    // Uma figura que anda sozinha (a Morgan, as visitas): o passo, a pose no lugar e a profundidade.
+    viverFigura(o, sp, prefixo, t, dt, vel, dela, bonus) {
+      if (o.caminho.length) { this.andarPor(o, dt, vel); o.t += dt; if (o.t > 150) { o.t = 0; o.quadro = (o.quadro + 1) % 4; }
+        if (!o.caminho.length) { if (o.saindo) { o.visivel = false; o.saindo = false; } else { o.lado = 'frente'; o.esp = false; } } }
+      const anda = o.caminho.length > 0; const vis = dela && o.visivel; const [x, y] = iso(o.x, o.y);
+      sp.setVisible(vis).setPosition(x, y).setDepth(profundidadePessoa(o.x, o.y) + (!anda && o.pose === 'sentada' ? bonus : 0))
+        .setTexture(`${prefixo}-${o.lado}-${anda ? 'andando' + o.quadro : o.pose === 'sentada' ? 'sentada' : 'parada'}${o.esp ? '-esp' : ''}`);
+      return { vis, anda, x, y };
+    }
+    // A Morgan e as visitas (DEC-188, item 5). A Morgan à mesa senta do outro lado (atrás da mesa, sem o bônus de sentar).
+    viverJuntos(t, dt, dela) {
+      const g = this.morgan; const r = this.viverFigura(g, this.spMorgan, 'morgan', t, dt, 1.4, dela, g.objeto === 'mesa-jantar' ? 0 : 0.6);
+      const bm = r.vis && !r.anda && g.balao && this.textures.exists('balao-' + g.balao) ? g.balao : null;
+      this.spBalaoMorgan.setVisible(!!bm).setPosition(r.x + 3, r.y - 26 + Math.round(Math.sin(t / 450))); if (bm) this.spBalaoMorgan.setTexture('balao-' + bm);
+      const vs = this.visitas.map((v, k) => this.viverFigura(v, this.spVisitas[k], 'visita' + k, t, dt, 1.4, dela, 0.6));
+      // a conversa: um balãozinho de cada vez, em quem está sentado
+      const quem = vs.map((v, k) => (v.vis && !v.anda ? k : -1)).filter((k) => k >= 0); const fala = quem.length ? quem[Math.floor(t / 4000) % quem.length] : -1;
+      const mostra = fala >= 0 && Math.floor(t / 2000) % 2 === 0; this.spBalaoVisita.setVisible(mostra); if (mostra) this.spBalaoVisita.setPosition(vs[fala].x + 4, vs[fala].y - 34 + Math.round(Math.sin(t / 500)));
+    }
+    // Os sentidos e as coisas dela (DEC-188, itens 6 e 7): a fumaça da panela, o vapor do banho, o celular (na mão, no
+    // criado-mudo), o que ela leva andando, o prato na mesa e a cena genérica da TV.
+    viverSentidos(t, dela, deitada, wx, wy, alfa) {
+      const b = this.b || {}; const S = b.sentidos || {}; const p = this.pepper; const acha = (id, modelo) => this.mapa.itens.find((i) => i.id === id) || this.mapa.itens.find((i) => i.modelo === modelo);
+      const nuvem = (lista, base, on, tempo) => lista.forEach((s, k) => { if (!on || !base) { s.setVisible(false); return; } const f = ((t / tempo) + k / lista.length) % 1;
+        s.setVisible(true).setPosition(base[0] + Math.round(Math.sin(f * 5 + k * 2) * 4), base[1] - Math.round(f * 22)).setAlpha((1 - f) * 0.85); });
+      const fogao = acha('fogao', 'fogao'); nuvem(this.fumaca, fogao && iso(fogao.x + 0.35, fogao.y + 0.35, 18), dela && !!S.fumaca, 1500);
+      const banheira = acha('banheira', 'banheira'); const pb = this.portaBanheiro;
+      nuvem(this.vapor, pb ? [pb.wx, pb.wy - 4] : banheira && iso(banheira.x + 0.8, banheira.y + 0.5, 14), dela && !!S.vapor, 1900);
+      // na mão: o que ela leva andando (o prato, a louça, as compras), senão o celular quando ela está nele
+      const vista = dela && p.visivel && !p.privado && !deitada; const mao = p.esp ? -4 : 4; const sentada = p.pose === 'sentada' && !p.caminho.length;
+      const leva = p.caminho.length && { prato: 'prato_mao', 'louça': 'louca_mao', louca: 'louca_mao', compras: 'sacola', mercado: 'sacola', farmacia: 'sacola' }[b.leva];
+      this.spLeva.setVisible(!!(vista && leva)).setAlpha(alfa); if (vista && leva) this.spLeva.setTexture('det-' + leva).setPosition(wx + mao, wy - 10).setDepth(this.spPepper.depth + 0.01);
+      const naMao = vista && !leva && b.celular === 'mao';
+      this.spCel.setVisible(naMao).setAlpha(alfa); if (naMao) this.spCel.setPosition(wx + mao, wy - (sentada ? 5 : 9)).setDepth(this.spPepper.depth + (p.lado === 'costas' ? -0.01 : 0.01));
+      const criado = b.celular === 'criado' && acha('criado-1', 'criado');
+      this.spCelCriado.setVisible(!!(dela && criado)); if (dela && criado) { const [cx, cy] = iso(criado.x + 0.2, criado.y + 0.45, 12); this.spCelCriado.setPosition(cx, cy).setDepth(profundidade(criado) + 0.02); }
+      const pr = b.prato && !(Number(b.prato.porcoes) <= 0) && acha(b.prato.onde || 'mesa-jantar', 'mesa_jantar');
+      this.spPrato.setVisible(!!(dela && pr)); if (dela && pr) { const [mx, my] = iso(pr.x + 0.55, pr.y + 1.0, 15); this.spPrato.setPosition(mx, my).setDepth(profundidade(pr) + 0.02); }
+      this.desenharTv(t, dela);
+    }
+    // A tela da TV ligada: uma cena genérica pelo tipo do programa (esporte, videogame, notícia, desenho, série), 4 quadros
+    // por segundo, na face da tela (de 0,1 a 1,9 de largura e de 2 a 20 pixels de altura, como em arte.js).
+    desenharTv(t, dela) {
+      const g = this.tvTela; const tv = this.mapa.itens.find((i) => i.modelo === 'tv'); const e = this.tv || {};
+      if (!dela || !tv || !e.ligada) { g.setVisible(false); this.tvTipo = null; return; }
+      const tipo = tipoDePrograma(e.programa); this.tvTipo = tipo; if (g.visible && t - (this.tvEm || 0) < 250) return; this.tvEm = t;
+      const P = (u, h) => { const [x, y] = iso(tv.x + u, tv.y + 0.3, (tv.z || 0) + h); return { x, y }; };
+      const q = (u0, u1, h0, h1, cor) => { g.fillStyle(cor, 1); g.fillPoints([P(u0, h0), P(u1, h0), P(u1, h1), P(u0, h1)], true); };
+      const k = Math.floor(t / 250); g.clear(); g.setVisible(true).setDepth(profundidade(tv) + 0.01);
+      if (tipo === 'esporte') { q(0.12, 1.88, 2.5, 19.5, 0x3f8f4f); q(0.95, 1.0, 2.5, 19.5, 0x9fcf86); const u = 0.2 + ((k * 0.09) % 1.5); q(u, u + 0.09, 8, 10, 0xfff8ec); q(0.15, 0.7, 16.5, 19, 0x141018); }
+      else if (tipo === 'videogame') { q(0.12, 1.88, 2.5, 19.5, 0x1f2440); [0xe0405a, 0xf6d76b, 0x6fa36b, 0x6b86c9].forEach((c, i) => q(0.2 + i * 0.42, 0.42 + i * 0.42, 2.5, 4 + ((k + i) % 4) * 2, c));
+        const u = 0.25 + (k % 9) * 0.15; q(u, u + 0.14, 9 + (k % 2) * 2, 12 + (k % 2) * 2, 0xf6d76b); }
+      else if (tipo === 'noticia') { q(0.12, 1.88, 2.5, 19.5, 0x3b4f8f); q(0.8, 1.2, 6, 15, 0xf2c3a0); q(0.75, 1.25, 6, 9, 0x2a2633); q(0.12, 1.88, 2.5, 6, 0xe0405a); q(0.15 + (k % 8) * 0.2, 0.3 + (k % 8) * 0.2, 3.5, 4.5, 0xfff8ec); }
+      else { const cenas = tipo === 'desenho' ? [0x9fcf86, 0xe58a9b, 0xa9c4e8] : [0x6e2a3a, 0x2f6b55, 0x7a4a35, 0x3b4f8f]; q(0.12, 1.88, 2.5, 19.5, cenas[Math.floor(k / 12) % cenas.length]);
+        const d = Math.sin(k / 3) * 0.1; q(0.45 + d, 0.75 + d, 3, 14, 0xf2c3a0); q(1.15 - d, 1.45 - d, 3, 13, 0xd9a27a); q(0.12, 1.88, 2.5, 4, 0x1a1424); }
     }
     // O Jean: anda pelo caminho tocado ou pela direção pedida; o aviso de ação aparece perto de um item com menu.
     viverJean(t, dt) {
