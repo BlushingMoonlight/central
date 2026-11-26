@@ -15,13 +15,20 @@ export function profundidade(it) {
 export const profundidadePessoa = (x, y) => x + y + 0.05;
 
 // ---------------------------------------------------------------- o caminho (uma grade de meio bloco)
+// O que é baixo no chão se passa por cima, como no servidor (o 68, DEC-188): sem isso, a caminha do gato fechava o vão do
+// quarto e ninguém chegava lá andando (B-021).
+export const BAIXOS = new Set(['caminha_gato', 'livros', 'cesto', 'potes_gato', 'chinelos']);
+// A grade cobre a casa e o lado de fora (a calçada e a rua, a área de "exterior"), para quem sai pela porta (DEC-198): as
+// células são contadas a partir do canto da área (x0, y0), que pode ser negativo.
 export function grade(mapa, livres = []) {
-  const N = 2, W = mapa.largura * N, H = mapa.fundo * N;
+  const N = 2; const area = mapa.exterior && mapa.exterior.area ? mapa.exterior.area : [0, 0, mapa.largura, mapa.fundo];
+  const x0 = Math.min(0, area[0]), y0 = Math.min(0, area[1]), x1 = Math.max(mapa.largura, area[2]), y1 = Math.max(mapa.fundo, area[3]);
+  const W = (x1 - x0) * N, H = (y1 - y0) * N;
   const bloqueado = new Uint8Array(W * H);
   for (const it of mapa.itens) {
-    if (it.chao || it.solto || it.parede || it.modelo === 'escada' || livres.includes(it.id)) continue;
-    for (let cy = Math.floor((it.y + 0.05) * N); cy < Math.ceil((it.y + it.d - 0.05) * N); cy++)
-      for (let cx = Math.floor((it.x + 0.05) * N); cx < Math.ceil((it.x + it.w - 0.05) * N); cx++) if (cx >= 0 && cy >= 0 && cx < W && cy < H) bloqueado[cy * W + cx] = 1;
+    if (it.chao || it.solto || it.parede || it.modelo === 'escada' || BAIXOS.has(it.modelo) || livres.includes(it.id)) continue;
+    for (let cy = Math.floor((it.y - y0 + 0.05) * N); cy < Math.ceil((it.y - y0 + it.d - 0.05) * N); cy++)
+      for (let cx = Math.floor((it.x - x0 + 0.05) * N); cx < Math.ceil((it.x - x0 + it.w - 0.05) * N); cx++) if (cx >= 0 && cy >= 0 && cx < W && cy < H) bloqueado[cy * W + cx] = 1;
   }
   // As paredes viram arestas que não se cruzam, menos nas aberturas (porta e vão).
   const aberto = (lado, x, y) => mapa.aberturas.some((a) => a.tipo !== 'janela' && ((lado === 'v' && a.lado === 'w' && a.em[0] === x && y >= a.em[1] && y < a.em[1] + a.largura)
@@ -30,15 +37,20 @@ export function grade(mapa, livres = []) {
     : p.de[1] === p.para[1] && p.de[1] === y && x >= p.de[0] && x < p.para[0]));
   const pode = (ax, ay, bx, by) => {
     if (bx < 0 || by < 0 || bx >= W || by >= H || bloqueado[by * W + bx]) return false;
-    if (ax !== bx) { const lx = Math.max(ax, bx) / N; if (Number.isInteger(lx) && parede('v', lx, ay / N)) return false; }
-    if (ay !== by) { const ly = Math.max(ay, by) / N; if (Number.isInteger(ly) && parede('h', ax / N, ly)) return false; }
+    if (ax !== bx) { const lx = Math.max(ax, bx) / N + x0; if (Number.isInteger(lx) && parede('v', lx, ay / N + y0)) return false; }
+    if (ay !== by) { const ly = Math.max(ay, by) / N + y0; if (Number.isInteger(ly) && parede('h', ax / N + x0, ly)) return false; }
     return true;
   };
-  return { N, W, H, bloqueado, pode };
+  return { N, W, H, x0, y0, bloqueado, pode };
 }
+// A célula de um ponto (em blocos), ou null fora da grade.
+export const celula = (g, p) => { const cx = Math.floor((p.x - (g.x0 || 0)) * g.N), cy = Math.floor((p.y - (g.y0 || 0)) * g.N); return cx >= 0 && cy >= 0 && cx < g.W && cy < g.H ? [cx, cy] : null; };
 // Busca em largura do ponto (x, y) ao alvo, em blocos; devolve a lista de pontos (centros de célula) ou [] se não chega.
-export function caminho(g, de, para) {
-  const c = (p) => [Math.min(g.W - 1, Math.max(0, Math.floor(p.x * g.N))), Math.min(g.H - 1, Math.max(0, Math.floor(p.y * g.N)))];
+// "estrito" (o boneco do Jean, DEC-198): o alvo fora da grade não tem caminho, e ninguém entra na célula do alvo pela parede.
+export function caminho(g, de, para, estrito = false) {
+  const ox = g.x0 || 0, oy = g.y0 || 0;
+  if (estrito && !celula(g, para)) return [];
+  const c = (p) => [Math.min(g.W - 1, Math.max(0, Math.floor((p.x - ox) * g.N))), Math.min(g.H - 1, Math.max(0, Math.floor((p.y - oy) * g.N)))];
   const [sx, sy] = c(de), [tx, ty] = c(para);
   const veio = new Int32Array(g.W * g.H).fill(-1); const fila = [sy * g.W + sx]; veio[fila[0]] = fila[0];
   while (fila.length) {
@@ -47,12 +59,12 @@ export function caminho(g, de, para) {
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const nx = x + dx, ny = y + dy, n = ny * g.W + nx;
       if (nx < 0 || ny < 0 || nx >= g.W || ny >= g.H || veio[n] >= 0) continue;
-      if (!g.pode(x, y, nx, ny) && !(nx === tx && ny === ty && !g.bloqueado[n])) continue;
+      if (!g.pode(x, y, nx, ny) && (estrito || !(nx === tx && ny === ty && !g.bloqueado[n]))) continue;
       veio[n] = k; fila.push(n);
     }
   }
   const fim = ty * g.W + tx; if (veio[fim] < 0) return [];
-  const pts = []; for (let k = fim; k !== veio[k]; k = veio[k]) pts.unshift({ x: (k % g.W + 0.5) / g.N, y: (Math.floor(k / g.W) + 0.5) / g.N });
+  const pts = []; for (let k = fim; k !== veio[k]; k = veio[k]) pts.unshift({ x: (k % g.W + 0.5) / g.N + ox, y: (Math.floor(k / g.W) + 0.5) / g.N + oy });
   pts.push({ x: para.x, y: para.y }); return pts;
 }
 
@@ -421,7 +433,8 @@ export function criarJogo(Phaser, pai, op) {
     naTela(wx, wy) { const c = this.cameras.main; return { x: (wx - c.worldView.x) * c.zoom, y: (wy - c.worldView.y) * c.zoom }; }
     chaoEm(wx, wy) { const x = (wy / BY + wx / BX) / 2, y = (wy / BY - wx / BX) / 2; return [Math.round(x * 4) / 4, Math.round(y * 4) / 4]; }
     // ---- o Jean anda: até o ponto tocado, pelo caminho; no fim, se parou numa escada, muda de andar
-    andarJeanAte(x, y) { const j = this.jean; const c = caminho(this.g, j, { x, y }); if (!c.length) return; j.caminho = c; j.mexeuEm = this.time.now; }
+    // Sempre pelo caminho da grade, saindo pelas portas; sem caminho, ele não anda e aparece um aviso curto (DEC-198).
+    andarJeanAte(x, y) { const j = this.jean; const c = caminho(this.g, j, { x, y }, true); if (!c.length) { if (op.aoSemCaminho) op.aoSemCaminho(); return false; } j.caminho = c; j.mexeuEm = this.time.now; return true; }
     jeanParou() {
       const j = this.jean; j.mexeuEm = this.time.now; if (!j.visivel) return;
       const esc = this.mapa.itens.find((i) => i.modelo === 'escada' && j.x >= i.x && j.x <= i.x + i.w && j.y >= i.y && j.y <= i.y + i.d);
@@ -430,8 +443,8 @@ export function criarJogo(Phaser, pai, op) {
     }
     // O passo livre (o polegar, o teclado, o controle): anda na direção, sem atravessar parede nem móvel.
     passoLivre(dx, dy, dt) {
-      const j = this.jean; const v = 2.4 * dt / 1000; const g = this.g, N = g.N;
-      const tenta = (nx, ny) => { const ax = Math.floor(j.x * N), ay = Math.floor(j.y * N), bx = Math.floor(nx * N), by = Math.floor(ny * N);
+      const j = this.jean; const v = 2.4 * dt / 1000; const g = this.g, N = g.N, ox = g.x0 || 0, oy = g.y0 || 0;
+      const tenta = (nx, ny) => { const ax = Math.floor((j.x - ox) * N), ay = Math.floor((j.y - oy) * N), bx = Math.floor((nx - ox) * N), by = Math.floor((ny - oy) * N);
         if (ax === bx && ay === by) return true; if (ax !== bx && ay !== by) return g.pode(ax, ay, bx, ay) && g.pode(bx, ay, bx, by); return g.pode(ax, ay, bx, by); };
       const nx = j.x + dx * v, ny = j.y + dy * v;
       if (tenta(nx, ny)) { j.x = nx; j.y = ny; } else if (tenta(nx, j.y)) j.x = nx; else if (tenta(j.x, ny)) j.y = ny; else return false;

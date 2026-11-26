@@ -10,4 +10,5 @@ fica em `config.js`.
   `scripts/gerar_prototipo.py`. Os componentes e as cores estão em `assets/design/`.
 - **Conferências:** `node scripts/verificar_design.mjs` e `node scripts/jornadas.mjs` (rodam em todo PR).
 - **O jogo:** `node scripts/testar_rotina.mjs` (a rotina dela: a rota, o desvio, a Morgan, as visitas e os sentidos; roda em
-  todo PR), `node scripts/testar_abertura.mjs` e `node scripts/testar_camera.mjs`.
+  todo PR), `node scripts/testar_jean.mjs` (o boneco do Jean sai pelas portas; roda em todo PR), `node scripts/testar_abertura.mjs` e
+  `node scripts/testar_camera.mjs`.

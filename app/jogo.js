@@ -1,6 +1,6 @@
 // Central — o jogo (JG, etapa 8, entregas 1 a 3; DEC-174 a DEC-176): a casa da Pepper (ou a do Jean) em tela cheia (DEC-149).
 // Carrega o Phaser 4 e a cena (jogo/), pede o estado ao servidor (o workflow 68, POST jogo/cena) a cada minuto e quando o
-// app volta à frente. Tocar num item abre o menu dele (jogo/menu.js); o chip e o botão abrem o celular do Jean
+// app volta à frente. Tocar num item abre o menu dele (jogo/menu.js); o botão do celular abre o celular do Jean (o chip é só a hora e o humor)
 // (jogo/celular.js, as 8 abas); o construtor está em jogo/construtor.js; os controles na tela, em jogo/controles.js.
 // Sem internet: abre com o último estado guardado e mostra "reconectando"; o que o Jean faz fica guardado e vai depois,
 // uma vez só (o id de cada ação).
@@ -55,9 +55,11 @@ const JG = {
       const salvo = ler(CHAVE_ULTIMO, null); if (e.tipo === 'rede' && salvo) return { ...salvo, offline: true }; throw e; }
   },
   corpo: () => '<div class="jogo__mundo" data-mundo></div>'
-    + '<button class="jogo__chip" data-chip aria-label="Hora e humor"><span data-hora></span><span class="jogo__humor" data-humor></span></button>'
+    // O chip é só informação (DEC-198): quem abre o celular é o botão do celular.
+    + '<div class="jogo__chip" data-chip role="status" aria-label="Hora e humor"><span data-hora></span><span class="jogo__humor" data-humor></span></div>'
     + '<button class="jogo__celular" data-celular aria-label="Celular"><span class="jogo__celular-tela"></span></button>'
-    + '<div class="jogo__zoom"><button class="jogo__mini" data-zoom="1" aria-label="Aproximar">+</button><button class="jogo__mini" data-zoom="-1" aria-label="Afastar">−</button>'
+    // Os botões de zoom ficam só como opção de acessibilidade, desligada de fábrica (DEC-198): a pinça, o toque duplo e a roda seguem.
+    + '<div class="jogo__zoom" data-zoomcaixa hidden><button class="jogo__mini" data-zoom="1" aria-label="Aproximar">+</button><button class="jogo__mini" data-zoom="-1" aria-label="Afastar">−</button>'
     + '<button class="jogo__mini" data-centro aria-label="Centralizar">◎</button></div>'
     + '<div class="jogo__folha" data-folha hidden></div>',
   async depois(raiz, d, ctx) {
@@ -79,6 +81,7 @@ const JG = {
       aoDiagnostico: (x) => { diag = x; if (medida) medida.amostras.push(x.fps); },
       aoTocar: (id, sx, sy) => menus.abrir(id, sx, sy),
       aoSoltar: async (id, x, y, espelhar, tirar) => { const c = await menus.agir({ acao: 'mover', item: id, op: tirar ? 'tirar' : 'soltar', valor: { x, y, espelhar } }); if (c) { motor.cancelarMover(); ui.movendo(false); } },
+      aoSemCaminho: () => menus.aviso('Não dá pra ir por aí.'),
       aoAndou: (x, y, andar) => { enviar({ acao: 'jean', op: 'andar', valor: { x, y, andar } }).then((c) => { if (c && c.reacao) menus.aviso('Ela viu você!'); if (c) aplicar(c); }).catch((e) => menus.aviso(e.message || 'Não deu certo agora.', 'erro')); },
       aoPerto: (id, sx, sy) => ui.perto(id, sx, sy, nomeDe(id)),
       aoBotao: botao,
@@ -99,6 +102,7 @@ const JG = {
       enviar({ acao: 'jean', op: 'config', valor: { camera: modo } }).catch(() => {});
     }
     const cfg = (d.jean && d.jean.config) || {}; if (cfg.camera && cfg.camera !== 'pepper') camera(cfg.camera); ui.botoes(!!cfg.botoes);
+    const zoomBotoes = (on) => { raiz.querySelector('[data-zoomcaixa]').hidden = !on; }; zoomBotoes(!!cfg.zoom_botoes);
     window.addEventListener('jogo-movendo', () => ui.movendo(true, () => motor.girar(), () => { motor.cancelarMover(); ui.movendo(false); }));
     const chip = () => { const p = (ultimo && ultimo.pepper) || {};
       raiz.querySelector('[data-hora]').textContent = horaEm('America/New_York');
@@ -124,10 +128,9 @@ const JG = {
     const sair = () => { parar(); location.hash = '#AJ0'; };
     const apresentacao = () => ui.apresentacao(() => { gravar(CHAVE_INTRO, true); enviar({ acao: 'jean', op: 'config', valor: { apresentacao: true } }).catch(() => {}); });
     celular = criarCelular({ folha, motor, chamar, enviar: (c) => menus.agir(c), som, menus, ultimo: () => ultimo, camera, verMapa, diagnostico, ligarDiagnostico, sair,
-      reverApresentacao: apresentacao, api: endereco, aoBotoes: (on) => ui.botoes(on),
+      reverApresentacao: apresentacao, api: endereco, aoBotoes: (on) => ui.botoes(on), aoZoomBotoes: zoomBotoes,
       construir: async (id) => { await verMapa(id); construtor.abrir(); },
       tirar: (id) => { const g = (((ultimo || {}).casa || {}).guardados || []).find((x) => x.id === id); if (!g) return; motor.mover(g, true); ui.movendo(true, () => motor.girar(), () => { motor.cancelarMover(); ui.movendo(false); }); menus.aviso('Toque onde quer pôr.'); } });
-    raiz.querySelector('[data-chip]').addEventListener('click', () => celular.abrir('status'));
     // A câmera sem pinça (rodada 9, adendo 3): o zoom em níveis inteiros e o "centralizar".
     raiz.querySelectorAll('[data-zoom]').forEach((b) => b.addEventListener('click', () => motor.zoom(Number(b.dataset.zoom))));
     raiz.querySelector('[data-centro]').addEventListener('click', () => motor.centralizar());

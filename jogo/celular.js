@@ -63,6 +63,8 @@ export function criarCelular(ctx) {
     if (aba === 'linha') return d.linha ? (d.linha.length ? d.linha.map((x) => `<p class="jogo__texto2">${esc(quando(x.em) || x.em)} · ${esc(x.texto)}</p>`).join('') : '<p class="jogo__texto2">Nada ainda.</p>') : semDados;
     if (aba === 'config') { const j = u.jean || {}; const cfg = j.config || {}; const loc = (d.config || {}).local;
       return '<p class="jogo__texto2">Câmera</p><div class="jogo__par">' + [['pepper', 'Pepper'], ['jean', 'Jean'], ['livre', 'Livre']].map(([k, n]) => `<button class="jogo__mini${ctx.motor.modoCamera() === k ? ' jogo__celula--sel' : ''}" data-a="camera:${k}">${n}</button>`).join('') + '</div>'
+        + '<p class="jogo__texto2">Acessibilidade</p>'
+        + `<label class="jogo__linha jogo__marca"><input type="checkbox" data-zoombotoes${cfg.zoom_botoes ? ' checked' : ''}> Botões de zoom na tela (+, − e centralizar)</label>`
         + `<label class="jogo__linha jogo__marca"><input type="checkbox" data-botoes${cfg.botoes ? ' checked' : ''}> Botões na tela (fixos)</label>`
         + `<div class="jogo__par"><button class="jogo__mini" data-a="som:-" aria-label="Som mais baixo">‹</button><span class="jogo__texto" data-vol>Som ${Math.round(ctx.som.volumeAtual() * 10)}</span><button class="jogo__mini" data-a="som:+" aria-label="Som mais alto">›</button></div>`
         + '<div class="jogo__par"><button class="jogo__mini" data-a="zoom:-1">Mais longe</button><button class="jogo__mini" data-a="zoom:1">Mais perto</button></div>'
@@ -113,6 +115,7 @@ export function criarCelular(ctx) {
     if (!aberta) return; const t = e.target;
     const ab = t.closest('[data-aba]'); if (ab) { aba = ab.dataset.aba; ctx.som.toque(); desenhar(); if (aba === 'celular' && !notas[sub]) lerNotas(); return; }
     const sb = t.closest('[data-sub]'); if (sb) { sub = sb.dataset.sub; desenhar(); if (!notas[sub]) lerNotas(); return; }
+    if (t.matches('[data-zoombotoes]')) { const r = await ctx.enviar({ acao: 'jean', op: 'config', valor: { zoom_botoes: t.checked } }); if (r) ctx.aoZoomBotoes(t.checked); return; }
     if (t.matches('[data-botoes]')) { const r = await ctx.enviar({ acao: 'jean', op: 'config', valor: { botoes: t.checked } }); if (r) ctx.aoBotoes(t.checked); return; }
     const b = t.closest('[data-a]'); if (!b) return; const [a, v, w] = b.dataset.a.split(':');
     if (a === 'fechar') return fechar();
