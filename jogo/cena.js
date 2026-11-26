@@ -422,12 +422,15 @@ export function criarJogo(Phaser, pai, op) {
       const cand = [], perto = [];
       const testa = (id, s) => { if (!s || !s.visible) return; const b = s.getBounds(); if (!b.contains(w.x, w.y)) return;
         let lx = Math.floor((w.x - b.x)), ly = Math.floor((w.y - b.y)); if (s.flipX) lx = s.width - 1 - lx; const a = this.textures.getPixelAlpha(lx, ly, s.texture.key);
-        if (a > 0) cand.push({ id, d: s.depth }); else perto.push({ id, d: -b.width * b.height }); };
+        if (a > 0) cand.push({ id, d: s.depth, s }); else if (!id.startsWith('pessoa:')) perto.push({ id, d: -b.width * b.height, s }); };
       const ehChao = (id) => { const it = this.mapa.itens.find((i) => i.id === id); return it && (it.chao || it.modelo === 'escada'); };
       for (const [id, s] of Object.entries(this.sprites)) { const it = this.mapa.itens.find((i) => i.id === id); if (it && !it.fora && !(this.podeAndar() && ehChao(id))) testa(id, s); }
       if (this.gato.vivo && this.dela) testa('gato', this.spGato);
+      // As pessoas (rodada 9, parte I; adendo 10, item 7): tocar em alguém abre a ficha; no celular dela, a tela dele.
+      testa('pessoa:pepper', this.spPepper); testa('pessoa:celular', this.spCel); testa('pessoa:celular', this.spCelCriado); testa('pessoa:morgan', this.spMorgan); testa('pessoa:jean', this.spJean);
+      (this.spVisitas || []).forEach((sp, k) => { if (this.visitas[k] && this.visitas[k].nome) testa('pessoa:' + this.visitas[k].nome, sp); });
       cand.sort((a, b) => b.d - a.d); if (!cand.length && !this.podeAndar()) cand.push(...perto.sort((a, b) => b.d - a.d));
-      if (cand.length && aoTocar) { const id = cand[0].id; const s = id === 'gato' ? this.spGato : this.sprites[id]; const pt = this.naTela(s.x, s.y - s.displayHeight * 0.6); aoTocar(id, pt.x, pt.y); return; }
+      if (cand.length && aoTocar) { const { id, s } = cand[0]; const pt = this.naTela(s.x, s.y - s.displayHeight * 0.6); aoTocar(id, pt.x, pt.y); return; }
       if (this.podeAndar()) { const [x, y] = this.chaoNaTela(p); this.andarJeanAte(x, y); }
     }
     naTela(wx, wy) { const c = this.cameras.main; return { x: (wx - c.worldView.x) * c.zoom, y: (wy - c.worldView.y) * c.zoom }; }
@@ -739,7 +742,7 @@ export function criarJogo(Phaser, pai, op) {
     atualizar: (c) => { if (cena) cena.atualizar(c); else pendente = c; },
     olhar: (id) => { if (cena) { cena.fixo = id; cena.desvio.x = 0; cena.desvio.y = 0; } },
     mover: (id, tirar) => cena && cena.iniciarMover(id, tirar),
-    posicao: (id) => { if (!cena) return null; const s = id === 'gato' ? cena.spGato : id === 'jean' ? cena.spJean : cena.sprites[id]; return s ? cena.naTela(s.x, s.y - s.displayHeight * 0.4) : null; },
+    posicao: (id) => { if (!cena) return null; const s = id === 'gato' ? cena.spGato : id === 'jean' ? cena.spJean : id === 'pepper' ? cena.spPepper : id === 'morgan' ? cena.spMorgan : cena.sprites[id]; return s ? cena.naTela(s.x, s.y - s.displayHeight * 0.4) : null; },
     girar: () => cena && cena.girarMover(),
     cancelarMover: () => cena && cena.cancelarMover(),
     estado: () => (cena ? cena.estado : null),
@@ -758,6 +761,8 @@ export function criarJogo(Phaser, pai, op) {
     construir: (modo) => { if (!cena) return; cena.construindo = modo || null; if (!modo) cena.livre = null; cena.marcar([]); },
     marcar: (formas) => cena && cena.marcar(formas),
     perto: () => (cena ? cena.perto : null),
+    // Parado por baixo de um app que cobre a tela, ou sem o contexto do WebGL (rodada 9, parte I): o laço dorme e acorda.
+    pausar: (on) => { if (!jogo.loop) return; if (on) jogo.loop.sleep(); else jogo.loop.wake(); },
     destruir: () => jogo.destroy(true),
   };
 }

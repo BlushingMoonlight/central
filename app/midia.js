@@ -90,3 +90,16 @@ export async function ligarAvisos() {
   await chamar('aparelho', { acao: 'push', assinatura: assinatura.toJSON() });
   return true;
 }
+
+// A cada abertura (L6, feito na parte I): com a permissão já dada, renova a inscrição do push e manda de novo ao servidor
+// (o 12 grava por cima e reativa a que tinha caído). Nunca pede permissão aqui; sem permissão, não faz nada.
+export async function renovarAvisos() {
+  if (modoDemo || !suportaAvisos() || Notification.permission !== 'granted') return false;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let assinatura = await reg.pushManager.getSubscription();
+    if (!assinatura) { const { chave_publica } = await chamar('aparelho', { acao: 'chave_push' }); assinatura = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chaveParaBytes(chave_publica) }); }
+    await chamar('aparelho', { acao: 'push', assinatura: assinatura.toJSON() });
+    return true;
+  } catch (e) { return false; }
+}

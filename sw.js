@@ -1,14 +1,16 @@
 // Central — service worker. Guarda o "shell" do app (HTML, CSS, JS, ícones) para abrir sem internet, sempre buscando
 // primeiro na rede. NUNCA guarda as respostas da API (que são POST, em outro endereço). Recebe o push e abre a Conversa.
-const CACHE = 'central-shell-7';
+const CACHE = 'central-shell-8';
 const SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'assets/design/tokens.css', 'assets/design/componentes.css',
   'app/main.js', 'app/rota.js', 'app/api.js', 'app/adaptar.js', 'app/ui.js', 'app/fila.js', 'app/midia.js', 'app/conversa.js', 'app/captura.js', 'app/entrada.js',
-  'app/vida.js', 'app/agenda.js', 'app/financas.js', 'app/pessoas.js', 'app/ajustes.js', 'app/painel.js', 'app/jogo.js',
+  'app/vida.js', 'app/agenda.js', 'app/financas.js', 'app/pessoas.js', 'app/ajustes.js', 'app/painel.js', 'app/jogo.js', 'app/versao.js',
   'app/icones/icone.svg', 'app/icones/icone-192.png'];
 
+// A versão nova espera (I-pesquisa 3): só assume quando o app pede, na abertura, num momento seguro (app/main.js).
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
 });
+self.addEventListener('message', (e) => { if (e.data && e.data.tipo === 'pular') self.skipWaiting(); });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((l) => Promise.all(l.filter((n) => n !== CACHE).map((n) => caches.delete(n)))).then(() => self.clients.claim()));
 });

@@ -197,3 +197,38 @@ p + p { margin-top: var(--esp-2); }
 .jogo__ab { display: flex; align-items: flex-end; gap: var(--esp-2); }
 .jogo__intro { position: absolute; z-index: 5; left: var(--esp-4); right: var(--esp-4); bottom: calc(env(safe-area-inset-bottom) + var(--alvo-secao) + var(--esp-4)); max-width: var(--largura-passo); margin: 0 auto; background: var(--jogo-janela); border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pequeno); padding: var(--esp-3); }
 .jogo__celular--novo::after { content: ''; position: absolute; top: var(--esp-1); right: var(--esp-1); width: var(--esp-3); height: var(--esp-3); border-radius: 50%; background: var(--jogo-mal); }
+
+/* O app é o jogo (rodada 9, parte I, DEC-199): os apps do celular abrem numa janela por cima do jogo. Em pé no celular, ela
+   cobre a tela; deitado e no iPad, é um painel do lado, e o jogo segue à vista. */
+.jogo__app { position: absolute; z-index: 6; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; background: var(--fundo); color: var(--texto);
+  font-family: var(--fonte); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.jogo__app--lado { left: auto; width: min(62%, var(--largura-max)); border-left: var(--jogo-linha) solid var(--jogo-borda); }
+.jogo__app .tela { min-height: 100%; }
+.jogo__app .topo { position: sticky; top: 0; z-index: 1; border-bottom: var(--jogo-linha) solid var(--jogo-borda); }
+.jogo__app .topo__titulo, .tela--jogo .topo__titulo { font-family: ui-monospace, monospace; color: var(--destaque); }
+.jogo__app .escrever { bottom: 0; padding-bottom: calc(var(--esp-2) + env(safe-area-inset-bottom)); }
+.jogo__app a:not(.botao):not(.item), .tela--jogo a:not(.botao) { color: var(--destaque); }
+/* A tela de início do celular: os apps em grade, como num telefone */
+.jogo__apps { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--esp-2); margin: var(--esp-2) 0; }
+.jogo__apps .jogo__linha { grid-column: span 3; }
+.jogo__appi { display: flex; align-items: center; justify-content: center; min-height: var(--alvo-secao); padding: var(--esp-2); text-align: center; text-decoration: none;
+  background: var(--jogo-sel); color: var(--jogo-texto); border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pequeno); font: var(--texto-15) ui-monospace, monospace; }
+a.jogo__mini { display: inline-flex; align-items: center; justify-content: center; padding: 0 var(--esp-3); text-decoration: none; }
+.jogo__folha textarea { width: 100%; min-height: calc(var(--alvo-secao) * 3); background: var(--jogo-sel); color: var(--jogo-texto); border: var(--linha-fina) solid var(--jogo-texto-2);
+  border-radius: var(--raio-pequeno); font: var(--texto-16) ui-monospace, monospace; padding: var(--esp-2); }
+.jogo__carga { position: absolute; z-index: 4; left: var(--esp-4); right: var(--esp-4); top: 30%; max-width: var(--largura-passo); margin: 0 auto; background: var(--jogo-janela);
+  border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pequeno); padding: var(--esp-4); }
+.jogo__intro[data-atualize] { z-index: 8; }
+/* A abertura (I3): a janela da casa acendendo, em pixels inteiros; um toque pula; vira a tela de carregamento */
+.jogo__abertura { position: absolute; z-index: 7; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--esp-3); background: var(--jogo-fundo); }
+.abertura__arte { width: min(50vmin, var(--camera)); height: min(50vmin, var(--camera)); image-rendering: pixelated; }
+.abertura__luz { opacity: 0; animation: acender var(--tempo-abertura) steps(6, end) forwards; }
+.abertura__gato { opacity: 0; animation: acender var(--tempo) steps(2, end) var(--tempo-abertura) forwards; }
+.abertura__texto { min-height: var(--alvo); }
+@keyframes acender { to { opacity: 1; } }
+/* A entrada (I1): a janela escura de borda dourada do jogo, sem o jogo por trás */
+.tela--jogo { background: var(--fundo); color: var(--texto); }
+.tela--jogo .topo { background: var(--jogo-janela); border-bottom: var(--jogo-linha) solid var(--jogo-borda); }
+.janela-jogo { margin: var(--esp-4) 0; padding: var(--esp-4); background: var(--superficie); border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pequeno); }
+.janela-jogo h1 { font-family: ui-monospace, monospace; color: var(--destaque); }
+html[data-app-jogo] body { background: var(--jogo-fundo); }

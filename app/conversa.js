@@ -79,8 +79,13 @@ function ligarMensagens(raiz, d, recarregar) {
   }));
 }
 
-const descer = () => window.scrollTo(0, document.documentElement.scrollHeight);
-const pertoDoFim = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 80;
+// A conversa rola dentro da janela do app, no jogo (DEC-199); fora dele, a página.
+const janela = () => document.querySelector('.jogo__app:not([hidden])');
+const rolado = () => { const c = janela(); return c ? c.scrollTop : window.scrollY; };
+const alturaToda = () => { const c = janela(); return c ? c.scrollHeight : document.documentElement.scrollHeight; };
+const rolarPara = (y) => { const c = janela(); if (c) c.scrollTop = y; else window.scrollTo(0, y); };
+const descer = () => rolarPara(alturaToda());
+const pertoDoFim = () => { const c = janela(); return (c ? c.clientHeight : window.innerHeight) + rolado() >= alturaToda() - 80; };
 
 const ESCREVER = '<form class="escrever"><label class="oculto" for="msg">Mensagem</label>'
   + '<input id="msg" placeholder="Mensagem" autocomplete="off" enterkeyhint="send">'
@@ -120,19 +125,19 @@ const CV = {
     // Rolou até o topo e ainda há mensagens antes: traz mais, sem perder o lugar na tela.
     let temMais = !!d.tem_mais, buscando = false;
     const noTopo = async () => {
-      if (!ctx.atual()) { window.removeEventListener('scroll', noTopo); return; }
-      if (buscando || !temMais || window.scrollY > 60) return;
+      if (!ctx.atual()) { alvoRolagem.removeEventListener('scroll', noTopo); return; }
+      if (buscando || !temMais || rolado() > 60) return;
       buscando = true; quantas += 200;
       try {
-        const altura = document.documentElement.scrollHeight;
+        const altura = alturaToda();
         const novo = await carregarConversa();
         if (!ctx.atual()) return;
         temMais = !!novo.tem_mais; ultimo = JSON.stringify(novo);
         main.innerHTML = mensagensHtml(novo); ligarMensagens(main, novo, atualizar);
-        window.scrollTo(0, document.documentElement.scrollHeight - altura + window.scrollY);
+        rolarPara(alturaToda() - altura + rolado());
       } catch (e) { quantas -= 200; } finally { buscando = false; }
     };
-    window.addEventListener('scroll', noTopo, { passive: true });
+    const alvoRolagem = janela() || window; alvoRolagem.addEventListener('scroll', noTopo, { passive: true });
     const relogio = setInterval(() => {
       if (!ctx.atual()) { clearInterval(relogio); return; }
       if (document.visibilityState === 'visible') atualizar();

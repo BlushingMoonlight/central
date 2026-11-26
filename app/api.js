@@ -16,8 +16,17 @@ function gravar(chave, valor) {
   try { valor ? localStorage.setItem(chave, valor) : localStorage.removeItem(chave); } catch (e) { /* sem armazenamento: segue sem lembrar */ }
 }
 
+// O papel (DEC-200): o app de administrador só aparece para o administrador; o servidor confere de novo em cada pedido do
+// painel (o 01). Guardado no aparelho, vindo do 69. Na demonstração, ?papel=jogador faz o jogador comum.
+const CHAVE_PAPEL = 'central-papel';
+export function papel() { if (modoDemo) return busca.get('papel') === 'jogador' ? 'jogador' : 'administrador'; return ler(CHAVE_PAPEL) || null; }
+export function definirPapel(p) { if (!modoDemo && (p === 'administrador' || p === 'jogador')) gravar(CHAVE_PAPEL, p); }
+// O app velho demais (DEC-202): o servidor manda "atualize"; daí em diante nada é gravado no formato antigo.
+let desatualizado = false;
+export const marcarDesatualizado = () => { desatualizado = true; };
+
 export function lerToken() { return modoDemo ? (estadoDemo === 'sem_sessao' ? '' : 'demo') : ler(CHAVE_TOKEN); }
-export function gravarToken(t) { if (!modoDemo) gravar(CHAVE_TOKEN, t); if (t) gravar(CHAVE_JA_ENTROU, '1'); }
+export function gravarToken(t) { if (!modoDemo) gravar(CHAVE_TOKEN, t); if (t) gravar(CHAVE_JA_ENTROU, '1'); if (!t) gravar(CHAVE_PAPEL, ''); }
 export const temSessao = () => !!lerToken();
 export const jaEntrou = () => !!ler(CHAVE_JA_ENTROU);
 
@@ -56,6 +65,7 @@ export async function chamar(caminho, corpo = {}) {
     if (!r.ok) throw new ErroApi(r.erro || '', 'servidor');
     return r;
   }
+  if (desatualizado && caminho !== 'jogo/celular') throw new ErroApi('Atualize a Central para continuar.', 'servidor');
   if (!endereco()) throw new ErroApi('', 'rede');
   const cabecalhos = { 'Content-Type': 'application/json' };
   const token = lerToken();
@@ -69,7 +79,7 @@ export async function chamar(caminho, corpo = {}) {
   // Só um 401 da sessão principal tira o Jean da conta. Um 401 do painel (DEC-123) vira um erro da tela: o painel usa a
   // mesma sessão (DEC-116), e uma recusa ali nunca apaga o token da conta.
   if (resposta.status === 401) {
-    if (caminho.startsWith('painel/')) throw new ErroApi('O painel não abriu. Volte e toque em "Painel do Jean" de novo.', 'servidor');
+    if (caminho.startsWith('painel/')) throw new ErroApi('O painel não abriu. Só o administrador abre o painel; se for você, feche e abra o app de novo.', 'servidor');
     gravar(CHAVE_TOKEN, ''); throw new ErroApi('', 'sessao');
   }
   let dados = null;

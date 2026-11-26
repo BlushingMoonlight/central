@@ -6,14 +6,15 @@ import { esc, data, item, lista, botao, acoes, campo, vazio, editor, dolares, po
 const painel = (tela, acao = 'ler', extra = {}) => chamar('painel/' + tela, { acao, ...extra });
 const numeros = (...pares) => '<div class="numeros">' + pares.map(([r, v, extra]) => `<div><span class="pequeno">${r}</span><p class="grande">${v}</p>`
   + (extra ? `<span class="pequeno">${extra}</span>` : '') + '</div>').join('') + '</div>';
-const P = { tipo: 'painel', voltar: ['PJ0', 'Painel'] };
+// O painel de administrador (DEC-200): só para o administrador (o app esconde, e o porteiro, o 01, recusa o resto).
+const P = { tipo: 'painel', admin: true, voltar: ['PJ0', 'Painel'] };
 const numeroDe = (t) => Number(String(t).replace(',', '.'));
 
-const TUDO = [['PJ1', 'Custos'], ['PJ2', 'Mundo'], ['PJ3', 'Cânone'], ['PJ4', 'Pessoas'], ['PJ5', 'Chaves'], ['PJ6', 'Cúpula'],
+const TUDO = [['PJ14', 'Bastidores'], ['PJ1', 'Custos'], ['PJ2', 'Mundo'], ['PJ3', 'Cânone'], ['PJ4', 'Pessoas'], ['PJ5', 'Chaves'], ['PJ6', 'Cúpula'],
   ['PJ7', 'Carteira e conta'], ['PJ9', 'Módulos'], ['PJ10', 'Pedidos de função'], ['PJ12', 'Registros e falhas'], ['PJ13', 'Sistema']];
 
 const PJ0 = {
-  tipo: 'painel', titulo: 'Painel', voltar: ['AJ0', 'Ajustes'],
+  tipo: 'painel', admin: true, titulo: 'Painel', voltar: ['JG/celular', 'Celular'],
   carregar: () => painel('hoje'),
   corpo: (d) => (d.falhas_abertas ? `<div class="aviso aviso--erro" role="alert"><strong>${d.falhas_abertas} ${d.falhas_abertas === 1 ? 'falha aberta' : 'falhas abertas'}.</strong> Veja em Registros e falhas.</div>`
     : '<div class="aviso aviso--certo">Nenhuma falha aberta.</div>')
@@ -382,4 +383,82 @@ const PJ13 = {
   },
 };
 
-export default { PJ0, PJ1, PJ2, PJ3, PJ4, PJ5, PJ6, PJ7, PJ9, PJ10, PJ12, PJ13 };
+// Bastidores (o 99, DEC-203): os ganchos que esperavam a parte I. Leitura e ações numa função do banco (painel_bastidores).
+const bast = (acao, d = {}) => chamar('painel/bastidores', { acao, d });
+const CHAVES = [['conversa', 'A conversa'], ['espontaneas', 'As mensagens espontâneas'], ['motor', 'O motor do mundo'], ['mundo_real', 'O mundo real'],
+  ['buscas', 'As buscas'], ['pessoas', 'As outras pessoas'], ['testes', 'Os testes'], ['prospeccao', 'A prospecção']];
+const CIRCULOS = [['intimo', 'íntimo'], ['proximo', 'próximo'], ['amigo_jean', 'amigo do Jean'], ['conhecido', 'conhecido'], ['estranho', 'estranho']];
+const AJUSTES = [['limites_espontaneas', 'Limites das espontâneas'], ['orcamento', 'Orçamento por camada (US$ por dia)'], ['roteador', 'Roteador de modelos'],
+  ['dados_privados', 'Dados privados'], ['links_permitidos', 'Links permitidos']];
+const quandoBast = (iso) => (iso ? data(iso, true) : '—');
+const PJ14 = {
+  ...P, titulo: 'Bastidores',
+  carregar: () => bast('ler'),
+  corpo: (d) => {
+    const f = d.funil || {};
+    const h = ['<h2>A primeira sessão</h2>' + lista(item('Abriu', { det: quandoBast(f.abriu) }), item('Criou o personagem', { det: quandoBast(f.criou_o_personagem) }),
+      item('Falou com ela', { det: quandoBast(f.falou_com_ela) }), item('Mexeu na casa', { det: quandoBast(f.mexeu_na_casa) }))];
+    h.push('<h2>Segurança</h2>' + ((d.seguranca || []).length ? lista(...d.seguranca.map((x) => item(esc(x.tipo) + ' · ' + esc(x.nivel), { det: esc(x.detalhe) + ' · ' + quandoBast(x.em),
+      cls: x.nivel === 'alto' ? 'item--vencido' : '', acao: acoes(botao('Visto', { leve: true, attrs: ` data-visto="${Number(x.id)}"` })) }))) + acoes(botao('Marcar tudo como visto', { leve: true, attrs: ' data-visto="todos"' }))
+      : '<p class="texto-2">Nada novo.</p>'));
+    h.push('<h2>A conversa, nos últimos 7 dias</h2>' + ((d.falhas_conversa || []).length ? lista(...d.falhas_conversa.map((x) => item(x.tipo === 'resposta_vazia' ? 'Resposta vazia' : 'Contradisse o agora',
+      { det: `${x.vezes} ${x.vezes === 1 ? 'vez' : 'vezes'} · a última ${quandoBast(x.ultima)}`, cls: 'item--vencido' }))) : '<p class="texto-2">Nenhuma resposta vazia nem contradição.</p>'));
+    h.push('<h2>Chaves de desligar</h2>' + lista(...CHAVES.map(([k, n]) => { const off = (d.chaves || {})[k];
+      return item(n, { det: off ? 'desligada desde ' + quandoBast(off.desde) : 'ligada', cls: off ? 'item--vencido' : '', acao: acoes(botao(off ? 'Ligar' : 'Desligar', { leve: !off, perigo: !off, attrs: ` data-chave="${k}" data-ligar="${off ? 1 : 0}"` })) }); })));
+    h.push('<h2>Travamentos da casa</h2>' + ((d.travamentos || []).length ? lista(...d.travamentos.slice(0, 10).map((x) => item(esc(x.motivo), { det: esc(x.pessoa_id) + (x.acao ? ' · ' + esc(x.acao) : '') + ' · ' + quandoBast(x.em) })))
+      : '<p class="texto-2">Nenhum nos últimos 7 dias.</p>'));
+    h.push('<h2>O que ela viu</h2>' + ((d.observacoes || []).length ? lista(...d.observacoes.slice(0, 10).map((x) => item(esc(x.o_que), { det: esc(x.onde || '') + ' · importância ' + x.importancia }))) : '<p class="texto-2">Nada ainda.</p>'));
+    h.push('<h2>Os interesses dela</h2>' + ((d.interesses || []).length ? lista(...d.interesses.map((x) => item(esc(x.assunto), { det: esc(x.de_onde) + ' · sabe ' + x.sabe + ' de 10',
+      acao: acoes(botao('Tirar', { leve: true, attrs: ` data-interesse="${Number(x.id)}"` })) }))) : '<p class="texto-2">Nenhum.</p>'));
+    h.push('<h2>As metas</h2>' + lista(...Object.entries((d.metas || [])[0] || {}).map(([k, v]) => item(esc(k.replace(/_/g, ' ')), { det: v == null ? '—' : esc(String(v)) }))));
+    h.push('<h2>Os fatos do cânone</h2>' + lista(...(d.fatos || []).map((x) => item(esc(x.assunto), { det: esc(x.fato), cls: 'item--coluna', acao: acoes(botao('Tirar', { leve: true, perigo: true, attrs: ` data-fato="${Number(x.id)}"` })) })))
+      + editor('ed-fato', campo('Assunto', 'fa', { nome: 'assunto' }) + campo('O fato', 'ff', { nome: 'fato', area: true }) + campo('Toca (expressão, sem acento)', 'ft', { nome: 'toca' }) + campo('Contradiz (expressão, sem acento)', 'fc', { nome: 'contradiz' }))
+      + acoes(botao('Pôr um fato', { leve: true, attrs: ' data-editor="ed-fato" data-por-fato' })));
+    h.push('<h2>Os ajustes</h2>' + AJUSTES.map(([k, n]) => editor('ed-' + k, campo(n, 'aj-' + k, { nome: 'valor', area: true, valor: JSON.stringify((d.ajustes || {})[k] || {}, null, 1) }))
+      + acoes(botao(n, { leve: true, attrs: ` data-editor="ed-${k}" data-ajuste="${k}"` }))).join(''));
+    h.push('<h2>Os contatos</h2>' + ((d.contatos || []).length ? editor('ed-circulo', campo('Contato', 'cc', { nome: 'id', opcoes: d.contatos.map((x) => [String(x.id), x.nome + ' (' + x.circulo + ')']) })
+      + campo('Círculo', 'ci', { nome: 'circulo', opcoes: CIRCULOS })) + acoes(botao('Mudar o círculo', { leve: true, attrs: ' data-editor="ed-circulo" data-circulo' })) : '<p class="texto-2">Nenhum contato.</p>'));
+    h.push('<h2>Casos reportados</h2>' + ((d.bugs || []).length ? lista(...d.bugs.map((x) => item('Caso ' + x.id + ' · ' + esc(x.estado), { det: esc(x.descricao || 'sem descrição') + ' · ' + quandoBast(x.criado_em),
+      acao: x.estado === 'aberto' ? acoes(botao('Visto', { leve: true, attrs: ` data-bug="${Number(x.id)}"` })) : '' }))) : '<p class="texto-2">Nenhum.</p>'));
+    h.push('<h2>Por que ela fez isso</h2>' + editor('ed-rastreio', campo('O rastreio (do balão ou do caso)', 'rr', { nome: 'rastreio' })) + acoes(botao('Ver a história', { leve: true, attrs: ' data-editor="ed-rastreio" data-rastreio' })) + '<div data-historia></div>');
+    h.push('<h2>Os aparelhos e a versão</h2>' + lista(...(d.aparelhos || []).map((x) => item(esc(x.nome), { det: 'versão ' + (x.versao_app ?? '?') + ' · ' + quandoBast(x.ultimo_uso) })))
+      + editor('ed-versao', campo('Versão mínima do app', 'vm', { nome: 'versao', valor: String((d.versao_minima || {}).versao ?? 0), extra: ' inputmode="numeric"' }))
+      + acoes(botao('Mudar a versão mínima', { leve: true, attrs: ' data-editor="ed-versao" data-versao' })));
+    h.push('<h2>Apagar uma mensagem de verdade</h2><p class="texto-2">Sem volta. Sem isto, apagar só esconde.</p>' + editor('ed-apagar', campo('O número da mensagem', 'am', { nome: 'id', extra: ' inputmode="numeric"' }))
+      + '<div class="perigoso">' + acoes(botao('Apagar de verdade', { perigo: true, attrs: ' data-editor="ed-apagar" data-apagar' })) + '</div>');
+    return h.join('');
+  },
+  depois(raiz, d, ctx) {
+    const feito = async (acao, dd) => { await bast(acao, dd); ctx.recarregar(); };
+    aoTocar(raiz, '[data-visto]', (b) => feito('visto_seguranca', b.dataset.visto === 'todos' ? {} : { id: Number(b.dataset.visto) }));
+    aoTocar(raiz, '[data-chave]', (b) => feito('chave', { nome: b.dataset.chave, ligado: b.dataset.ligar === '1' }));
+    aoTocar(raiz, '[data-interesse]', (b) => feito('tirar_interesse', { id: Number(b.dataset.interesse) }));
+    aoTocar(raiz, '[data-bug]', (b) => feito('bug_visto', { id: Number(b.dataset.bug) }));
+    comConfirmacao(raiz, '[data-fato]', (b) => feito('fato', { op: 'tirar', id: Number(b.dataset.fato) }));
+    comEditor(raiz, '[data-por-fato]', (v) => feito('fato', { op: 'por', ...v }));
+    comEditor(raiz, '[data-circulo]', (v) => feito('circulo', { id: Number(v.id), circulo: v.circulo }));
+    comEditor(raiz, '[data-versao]', (v) => feito('versao_minima', { versao: String(v.versao).trim() }));
+    raiz.querySelectorAll('[data-ajuste]').forEach((b) => comEditor(raiz, `[data-ajuste="${b.dataset.ajuste}"]`, async (v) => {
+      let valor; try { valor = JSON.parse(v.valor); } catch (e) { marcarErro(raiz, 'aj-' + b.dataset.ajuste, 'Não é um JSON que vale.'); return; }
+      await feito('ajuste', { chave: b.dataset.ajuste, valor }); }));
+    comEditor(raiz, '[data-apagar]', async (v) => { if (!/^\d+$/.test(String(v.id).trim())) { marcarErro(raiz, 'am', 'O número da mensagem.'); return; }
+      const r = await bast('apagar_mensagem', { id: Number(v.id) }); if (!r.ok) { marcarErro(raiz, 'am', 'Essa mensagem não existe.'); return; } ctx.recarregar(); });
+    comEditor(raiz, '[data-rastreio]', async (v) => {
+      const r = await bast('por_que', { rastreio: String(v.rastreio).trim() }); const l = raiz.querySelector('[data-historia]');
+      const n = (r.mensagens || []).length + (r.ia || []).length + (r.registro || []).length;
+      l.innerHTML = !n ? '<p class="texto-2">Nada com esse rastreio.</p>' : lista(...(r.mensagens || []).map((m) => item((m.autor === 'jean' ? 'Jean' : 'Pepper') + ' · ' + quandoBast(m.em), { det: esc(m.texto) + (m.apagada ? ' (apagada)' : '') })),
+        ...(r.ia || []).map((c) => item('IA · ' + esc(c.camada) + ' · ' + esc(c.modelo), { det: esc(c.fim || '') + ' · ' + quandoBast(c.em) })),
+        ...(r.registro || []).map((x) => item(esc(x.workflow) + ' · ' + esc(x.acao), { det: esc(x.detalhe) })));
+    });
+  },
+};
+// O WhatsApp no jogo (I1): conectar o número com o QR Code, trocar e desconectar, nas Configurações do celular. O número
+// dela é da operação (a Evolution), por isso segue com o administrador (DEC-200); o "Onde ela fala" fica no Sistema.
+const WA = {
+  ...P, titulo: 'WhatsApp', voltar: ['JG/config', 'Configurações'],
+  carregar: () => painel('whatsapp'),
+  corpo: (d) => numerosWa(d) || '<p class="texto-2">Sem números ainda.</p>',
+  depois: (raiz, d, ctx) => ligarWa(raiz, ctx),
+};
+
+export default { WA, PJ14, PJ0, PJ1, PJ2, PJ3, PJ4, PJ5, PJ6, PJ7, PJ9, PJ10, PJ12, PJ13 };

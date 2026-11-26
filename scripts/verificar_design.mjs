@@ -73,6 +73,8 @@ const tokens = ler('assets/design/tokens.css');
 const bloco = (re) => Object.fromEntries([...(tokens.match(re) || [''])[0].matchAll(/--([\w-]+):\s*(#[0-9A-Fa-f]{6})/g)].map((m) => [m[1], m[2]]));
 const claro = bloco(/^:root \{[\s\S]*?\n\}/m);
 const escuro = bloco(/:root\[data-theme="dark"\] \{[\s\S]*?\n\}/);
+// Os apps do celular e a entrada, nas cores do jogo (DEC-199).
+const noJogo = bloco(/^\.jogo__app, \.tela--jogo \{[\s\S]*?\n\}/m);
 const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
 const razao = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 const pares = [['texto', 'fundo'], ['texto', 'superficie'], ['texto', 'superficie-2'], ['texto-2', 'fundo'], ['texto-2', 'superficie'],
@@ -80,7 +82,7 @@ const pares = [['texto', 'fundo'], ['texto', 'superficie'], ['texto', 'superfici
   ['texto', 'bolha-ela'], ['perigo', 'fundo'], ['perigo', 'superficie'], ['atencao', 'superficie'], ['atencao', 'superficie-2'],
   ['certo', 'superficie'], ['sobre-camera', 'camera-fundo'], ['texto-2', 'bolha-ela'], ['jogo-texto', 'jogo-janela'], ['jogo-texto-2', 'jogo-janela'], ['jogo-borda', 'jogo-janela']];
 let paresOk = 0;
-for (const [modo, t] of [['claro', claro], ['escuro', escuro]]) for (const [a, b] of pares) {
+for (const [modo, t] of [['claro', claro], ['escuro', escuro], ['jogo', noJogo]]) for (const [a, b] of pares) {
   if (!t[a] || !t[b]) { erros.push(`tokens.css (${modo}): falta --${a} ou --${b}`); continue; }
   const r = razao(t[a], t[b]);
   if (r < 4.5) erros.push(`contraste ${modo}: --${a} sobre --${b} = ${r.toFixed(2)}:1 (mínimo 4,5:1)`); else paresOk++;
@@ -118,7 +120,7 @@ const estatico = process.argv.includes('--estatico');
 { const { lerRota } = await import('../app/rota.js'); const T = { VI2: 1, VI5: 1, CV: 1 };
   const id = 'areas/documentos/tarefas/apostilar-certidao-curitiba';
   for (const h of ['#VI2/' + encodeURIComponent(id), '#VI2/' + id]) { const r = lerRota(h, T); if (r.cod !== 'VI2' || r.args.length !== 1 || r.args[0] !== id) erros.push(`rota ${h}: o id da tarefa chegou partido (${JSON.stringify(r.args)})`); }
-  if (lerRota('#XX/1', T).cod !== 'CV' || lerRota('#VI2', T).args.length) erros.push('rota: código desconhecido ou sem id não volta à Conversa sem argumentos'); }
+  if (lerRota('#XX/1', T).cod !== 'JG' || lerRota('', T).cod !== 'JG' || lerRota('#VI2', T).args.length) erros.push('rota: código desconhecido ou sem id não volta ao jogo sem argumentos (DEC-199)'); }
 // O jogo (etapa 8, entrega 1): a ordem de desenho, o caminho com as paredes, a luz pela hora e o limite de 8 luzes.
 { const J = await import('../jogo/cena.js'); const mapa = JSON.parse(ler('jogo/mapas/casa-pepper.json'));
   const sofa = mapa.itens.find((i) => i.id === 'sofa');
@@ -136,7 +138,7 @@ let contas = { telas: 0, estados: 0, app: 0 };
 // As rotas do app da entrega 1 (docs/fluxo/arvore.md, "Ordem de implementação"), com ids dos dados de app/demo.js.
 const ROTAS_APP = ['CV', 'CV1', 'CV2', 'CV3', 'K1', 'K2', 'K3', 'K4', 'VI0', 'VI1/casa', 'VI2/t-filtro', 'VI2/areas/casa/tarefas/t-filtro', 'VI3', 'VI4', 'VI5/gatos/mingau', 'VI1/gatos', 'VI6',
   'AG0', 'AG1/c1', 'AG2', 'AG3/carla', 'AG4', 'FI0', 'FI1', 'FI1/saas', 'FI2/g1', 'FI3', 'FI4/a2', 'FI5', 'FI6', 'FI7', 'FI8', 'FI9',
-  'JG', 'PE1', 'PE4', 'PE5', 'AJ0', 'AJ1', 'AJ2', 'AJ3', 'PJ0', 'PJ1', 'PJ2', 'PJ3', 'PJ4', 'PJ5', 'PJ6', 'PJ7', 'PJ9', 'PJ10', 'PJ12', 'PJ13',
+  'JG', 'JG/celular', 'JG/config', 'WA', 'PJ14', 'PE1', 'PE4', 'PE5', 'AJ0', 'AJ1', 'AJ2', 'AJ3', 'PJ0', 'PJ1', 'PJ2', 'PJ3', 'PJ4', 'PJ5', 'PJ6', 'PJ7', 'PJ9', 'PJ10', 'PJ12', 'PJ13',
   'passo-1', 'passo-4', 'passo-5', 'passo-6', 'passo-7', 'entrar', 'esqueci'];
 if (!estatico) {
   const { chromium } = createRequire(import.meta.url)('playwright');

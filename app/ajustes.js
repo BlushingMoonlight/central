@@ -1,18 +1,19 @@
 // Central — Ajustes (AJ0), Avisos (AJ1), Entrada e aparelhos (AJ2) e Instalar (AJ3).
-import { chamar, gravarToken } from './api.js';
+import { chamar, gravarToken, papel } from './api.js';
 import { esc, data, item, lista, botao, acoes, campo, editor, aoTocar, comEditor, comConfirmacao, ir, marcarErro } from './ui.js';
 import { suportaAvisos, avisosLigados, ligarAvisos } from './midia.js';
 
 const aparelho = (acao, extra = {}) => chamar('aparelho', { acao, ...extra });
 
 const AJ0 = {
-  tipo: 'filho', titulo: 'Ajustes', voltar: ['CV', 'Pepper'],
+  tipo: 'filho', titulo: 'Ajustes', voltar: ['JG/config', 'Configurações'],
+  // O app é o jogo (DEC-199): estes ajustes também estão nas Configurações do celular; o painel, só para o administrador.
   corpo: () => lista(item('Avisos', { ir: 'AJ1' }), item('Entrada e aparelhos', { ir: 'AJ2' }), item('Instalar', { ir: 'AJ3' }),
-    item('Painel do Jean', { ir: 'PJ0' }), item('Jogo', { det: 'A casa da Pepper, em teste', ir: 'JG' })),
+    ...(papel() === 'administrador' ? [item('Painel do Jean', { ir: 'PJ0' })] : [])),
 };
 
 const AJ1 = {
-  tipo: 'filho', titulo: 'Avisos', voltar: ['AJ0', 'Ajustes'],
+  tipo: 'filho', titulo: 'Avisos', voltar: ['JG/config', 'Configurações'],
   carregar: async () => ({ ...(await aparelho('listar')), ligados: await avisosLigados(), suporta: suportaAvisos() }),
   corpo(d) {
     const topo = !d.suporta ? '<p class="texto-2">Os avisos só chegam com a Central na Tela de Início.</p>' + acoes(botao('Instalar', { ir: 'AJ3', leve: true }))
@@ -31,7 +32,7 @@ const AJ1 = {
 };
 
 const AJ2 = {
-  tipo: 'filho', titulo: 'Entrada e aparelhos', voltar: ['AJ0', 'Ajustes'],
+  tipo: 'filho', titulo: 'Entrada e aparelhos', voltar: ['JG/config', 'Configurações'],
   carregar: () => aparelho('listar'),
   corpo: (d) => lista(...(d.aparelhos || []).map((a) => item(esc(a.nome), {
     det: a.este ? 'este aparelho' + (a.lembrado_ate ? ' · lembrado até ' + data(a.lembrado_ate, true) : '') : 'último uso ' + data(a.ultimo_uso, true) })))
@@ -52,7 +53,7 @@ const AJ2 = {
 };
 
 const AJ3 = {
-  tipo: 'filho', titulo: 'Instalar', voltar: ['AJ0', 'Ajustes'],
+  tipo: 'filho', titulo: 'Instalar', voltar: ['JG/config', 'Configurações'],
   corpo: () => '<ol class="lista"><li class="item">1. No Safari, toque em Compartilhar.</li><li class="item">2. Toque em “Adicionar à Tela de Início”.</li>'
     + '<li class="item">3. Toque em “Adicionar”.</li></ol><p class="pequeno">Os avisos só chegam com a Central na Tela de Início.</p>',
 };
