@@ -4,7 +4,7 @@
 // caminhos do app); a Pepper nunca vê nada disto. Desde a parte I (DEC-199), a aba Celular é a tela de início dos apps (as
 // telas do app antigo, que abrem numa janela por cima do jogo), e as Configurações são o painel do jogador (DEC-200).
 import { NOMES, CATALOGO } from './catalogo.js';
-import { APARENCIA } from './arte.js';
+import { economico, mudarEconomia } from './vivo.js';
 
 const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let agora = () => Date.now(); // trocado pelo relógio do servidor (ctx.agora): o relógio do aparelho nunca decide
@@ -63,7 +63,10 @@ export function criarCelular(ctx) {
         + linha('Ver a casa dela', 'ver:casa-pepper') + linha('Ver a minha casa', 'ver:casa-jean')
         + (j.voando ? '' : j.mapa_id === 'casa-pepper' ? linha('Voltar para casa (18 horas de viagem)', 'viajar:casa-jean') : linha('Viajar até ela (18 horas de viagem)', 'viajar:casa-pepper')); }
     if (aba === 'casa') { const c = d.casa || { contas: [], bichos: [] };
-      return linha('Construir na casa dela', 'construir:casa-pepper') + linha('Construir a minha casa', 'construir:casa-jean')
+      // O aconchego de cada cômodo dela (J2, adendo 11) e o guarda-roupa (J1)
+      const ac = (u.casa || {}).aconchego || {}; const nomeC = (id) => ((((ctx.motor.mapa() || {}).comodos) || []).find((x) => x.id === id) || { nome: id }).nome;
+      return linha('Construir na casa dela', 'construir:casa-pepper') + linha('Construir a minha casa', 'construir:casa-jean') + linha('O guarda-roupa dela', 'guarda-roupa')
+        + (Object.keys(ac).length ? '<p class="jogo__texto2">O aconchego (quanto mais aconchegante, melhor o humor de quem está lá)</p>' + Object.entries(ac).map(([k, v]) => barra(nomeC(k), v)).join('') : '')
         + `<p class="jogo__texto2">Catálogo: ${CATALOGO.length} itens (${[...new Set(CATALOGO.map((k) => k.grupo))].map(esc).join(', ')}), no construtor.</p>`
         + '<p class="jogo__texto2">As contas da casa dela</p>' + (c.contas.length ? c.contas.map((k) => `<p class="jogo__texto2">${esc(k.o_que)}: ${esc(k.moeda)} ${Number(k.valor).toFixed(2)}</p>`).join('') : '<p class="jogo__texto2">Nenhuma conta neste mês.</p>')
         + '<p class="jogo__texto2">Os bichos</p>' + c.bichos.map((b) => `<p class="jogo__texto2">${esc(b.nome)}: ${b.vivo ? `${b.idade} anos, saúde ${b.saude}` : 'partiu'}</p>`).join('')
@@ -78,9 +81,12 @@ export function criarCelular(ctx) {
         + '<p class="jogo__texto2">Acessibilidade</p>'
         + `<label class="jogo__linha jogo__marca"><input type="checkbox" data-zoombotoes${cfg.zoom_botoes ? ' checked' : ''}> Botões de zoom na tela (+, − e centralizar)</label>`
         + `<label class="jogo__linha jogo__marca"><input type="checkbox" data-botoes${cfg.botoes ? ' checked' : ''}> Botões na tela (fixos)</label>`
-        + `<div class="jogo__par"><button class="jogo__mini" data-a="som:-" aria-label="Som mais baixo">‹</button><span class="jogo__texto" data-vol>Som ${Math.round(ctx.som.volumeAtual() * 10)}</span><button class="jogo__mini" data-a="som:+" aria-label="Som mais alto">›</button></div>`
+        // os volumes separados e o mudo (J-pesquisa); o modo econômico (adendo 11: só o essencial se mexe)
+        + [['musica', 'Música'], ['sons', 'Sons'], ['vozes', 'Vozes']].map(([k, n]) => `<div class="jogo__par"><button class="jogo__mini" data-a="vol:${k}:-" aria-label="${n} mais baixo">‹</button><span class="jogo__texto" data-vol="${k}">${n} ${Math.round(ctx.som.volumes()[k] * 10)}</span><button class="jogo__mini" data-a="vol:${k}:+" aria-label="${n} mais alto">›</button></div>`).join('')
+        + `<label class="jogo__linha jogo__marca"><input type="checkbox" data-mudo${ctx.som.volumes().mudo ? ' checked' : ''}> Mudo</label>`
+        + `<label class="jogo__linha jogo__marca"><input type="checkbox" data-economia${economico() ? ' checked' : ''}> Modo econômico (menos animação, gasta menos bateria)</label>`
         + '<div class="jogo__par"><button class="jogo__mini" data-a="zoom:-1">Mais longe</button><button class="jogo__mini" data-a="zoom:1">Mais perto</button></div>'
-        + linha('Avisos do jogo', 'avisos') + '<a class="jogo__linha" href="#AJ1">Avisos neste aparelho</a>' + linha('Localização', 'local') + linha('Aparência do Jean', 'aparencia')
+        + linha('Avisos do jogo', 'avisos') + '<a class="jogo__linha" href="#AJ1">Avisos neste aparelho</a>' + linha('Localização', 'local') + linha(((u.jean || {}).aparencia || {}).criado_em ? 'Seu personagem' : 'Criar o seu personagem', 'aparencia')
         // O painel do jogador (DEC-200): a conta, os aparelhos, instalar, a exportação da conversa dele e o "reportar".
         + '<p class="jogo__texto2">Conta</p><a class="jogo__linha" href="#AJ2">E-mail, senha, aparelhos e sair</a><a class="jogo__linha" href="#AJ3">Instalar na tela de início</a>'
         + (admin() ? '<a class="jogo__linha" href="#WA">WhatsApp: conectar o número (QR Code)</a>' : '')
@@ -88,7 +94,7 @@ export function criarCelular(ctx) {
         + (loc ? `<p class="jogo__texto2">Localização: ${loc.ligado ? 'ligada' + (loc.lugar ? ', agora em ' + esc(loc.lugar) : '') : 'desligada'}</p>` : ''); }
     return '';
   }
-  function desenhar() { if (!aberta) return; folha.innerHTML = cabecalho() + `<div class="jogo__corpo">${corpo()}</div>` + '<button class="jogo__linha" data-a="fechar">Fechar</button>'; }
+  function desenhar() { if (!aberta || (ctx.criador && ctx.criador.aberto())) return; folha.innerHTML = cabecalho() + `<div class="jogo__corpo">${corpo()}</div>` + '<button class="jogo__linha" data-a="fechar">Fechar</button>'; }
   async function lerNotas() {
     const rot = { tarefas: async () => { const r = await ctx.chamar('vida', { acao: 'hoje' }); return (r.precisa || []).map((t) => ({ texto: t.titulo, det: t.det || t.prazo || '', rota: '#VI2/' + encodeURIComponent(t.id) })); },
       agenda: async () => { const r = await ctx.chamar('agenda', { acao: 'proximos' }); return (r.dias || []).flatMap((d) => d.itens.map((i) => ({ texto: i.titulo, det: d.data.split('-').reverse().join('/') + (i.hora ? ' ' + i.hora : ''), rota: '#AG0' }))).slice(0, 12); },
@@ -130,17 +136,12 @@ export function criarCelular(ctx) {
     folha.innerHTML = '<p class="jogo__titulo">Reportar um problema</p><p class="jogo__texto2">Conte o que aconteceu. A foto do jogo agora vai junto.</p>'
       + '<label class="jogo__linha jogo__marca">O que aconteceu <textarea data-relato maxlength="2000" rows="4"></textarea></label>' + linha('Mandar', 'mandar-relato') + linha('Voltar', 'voltar');
   }
-  function aparencia() {
-    const ap = ((ctx.ultimo() || {}).jean || {}).aparencia || {}; const sel = (k, ops) => `<label class="jogo__linha jogo__marca">${esc({ pele: 'Pele', cabelo: 'Cabelo', cor_cabelo: 'Cor do cabelo', barba: 'Barba', camisa: 'Camisa', calca: 'Calça', sapato: 'Sapato' }[k])} <select data-ap="${k}">${ops.map(([v, n]) => `<option value="${esc(v)}"${String(ap[k]) === String(v) ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select></label>`;
-    const nome = { preto: 'Preto', castanho: 'Castanho', loiro: 'Loiro', ruivo: 'Ruivo', grisalho: 'Grisalho', azul: 'Azul', verde: 'Verde', vinho: 'Vinho', preta: 'Preta', branca: 'Branca', amarela: 'Amarela', jeans: 'Jeans', bege: 'Bege', cinza: 'Cinza', branco: 'Branco', marrom: 'Marrom' };
-    folha.innerHTML = '<p class="jogo__titulo">Aparência do Jean</p>' + sel('pele', APARENCIA.pele.map((_, i) => [i, 'Tom ' + (i + 1)])) + sel('cabelo', Object.entries(APARENCIA.cabelo))
-      + ['cor_cabelo', 'camisa', 'calca', 'sapato'].map((k) => sel(k, Object.keys(APARENCIA[k]).map((v) => [v, nome[v] || v]))).join('').replace('</label><label', '</label>' + sel('barba', Object.entries(APARENCIA.barba)) + '<label')
-      + linha('Salvar', 'salvar-ap') + linha('Voltar', 'voltar');
-  }
   folha.addEventListener('click', async (e) => {
     if (!aberta) return; const t = e.target;
     const ab = t.closest('[data-aba]'); if (ab) { aba = ab.dataset.aba; ctx.som.toque(); desenhar(); if (aba === 'celular' && !notas[sub]) lerNotas(); return; }
     const sb = t.closest('[data-sub]'); if (sb) { sub = sb.dataset.sub; desenhar(); if (!notas[sub]) lerNotas(); return; }
+    if (t.matches('[data-mudo]')) { ctx.som.mudo(t.checked); if (ctx.aoSom) ctx.aoSom(); return; }
+    if (t.matches('[data-economia]')) { mudarEconomia(t.checked); return; }
     if (t.matches('[data-zoombotoes]')) { const r = await ctx.enviar({ acao: 'jean', op: 'config', valor: { zoom_botoes: t.checked } }); if (r) ctx.aoZoomBotoes(t.checked); return; }
     if (t.matches('[data-botoes]')) { const r = await ctx.enviar({ acao: 'jean', op: 'config', valor: { botoes: t.checked } }); if (r) ctx.aoBotoes(t.checked); return; }
     const b = t.closest('[data-a]'); if (!b) return; const [a, v, w] = b.dataset.a.split(':');
@@ -181,9 +182,9 @@ export function criarCelular(ctx) {
       if (!navigator.geolocation) return ctx.menus.aviso('Este aparelho não informa onde está.', 'erro');
       return navigator.geolocation.getCurrentPosition((p) => pedir(nome ? 'lugar' : 'aqui', { nome, lat: p.coords.latitude, lon: p.coords.longitude, raio: 150 }), () => ctx.menus.aviso('Sem permissão para a localização.', 'erro'), { timeout: 15000, maximumAge: 60000 });
     }
-    if (a === 'aparencia') return aparencia();
-    if (a === 'salvar-ap') { const valor = Object.fromEntries([...folha.querySelectorAll('[data-ap]')].map((s) => [s.dataset.ap, s.dataset.ap === 'pele' ? Number(s.value) : s.value]));
-      if (await ctx.enviar({ acao: 'jean', op: 'aparencia', valor })) { ctx.menus.aviso('Aparência salva.'); desenhar(); } return; }
+    if (a === 'aparencia') return ctx.criador.abrir('jean');
+    if (a === 'guarda-roupa') return ctx.criador.abrir('pepper');
+    if (a === 'vol') { ctx.som.iniciar(); ctx.som.mudarCanal(v, ctx.som.volumes()[v] + (w === '+' ? 0.1 : -0.1)); ctx.som.toque(); if (ctx.aoSom) ctx.aoSom(); return desenhar(); }
     if (a === 'diag') { folha.innerHTML = ctx.diagnostico() + linha('Voltar', 'voltar'); return ctx.ligarDiagnostico(folha); }
     if (a === 'intro') { fechar(); return ctx.reverApresentacao(); }
   });

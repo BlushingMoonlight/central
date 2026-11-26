@@ -9,7 +9,7 @@ import { chamar, endereco, modoDemo, definirPapel, marcarDesatualizado, papel } 
 import { VERSAO } from './versao.js';
 import { esc, CARREGANDO } from './ui.js';
 
-let motor = null; let relogio = null; let ultimo = null; let som = null; let mapaAtual = 'casa-pepper';
+let motor = null; let relogio = null; let ultimo = null; let som = null; let musica = null; let mapaAtual = 'casa-pepper';
 let casca = null, carga = null, celular = null, menus = null, ficha = null, abaPendente = null, montagem = 0;
 const CHAVE_ULTIMO = 'jogo-ultimo', CHAVE_FILA = 'jogo-fila', CHAVE_INTRO = 'jogo-apresentacao';
 const ler = (k, padrao) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : padrao; } catch (e) { return padrao; } };
@@ -60,7 +60,7 @@ function mostrarAtualize() {
 }
 
 function pararMotor() {
-  if (relogio) clearInterval(relogio); relogio = null; if (motor) { motor.destruir(); motor = null; } if (som) som.parar();
+  if (relogio) clearInterval(relogio); relogio = null; if (motor) { motor.destruir(); motor = null; } if (musica) { musica.parar(); musica = null; } if (som) som.parar();
   document.removeEventListener('visibilitychange', aoVoltar); window.removeEventListener('online', aoOnline);
 }
 async function aoVoltar() { if (document.visibilityState === 'visible' && motor) { try { aplicar(await enviar({ acao: 'cena' })); } catch (e) { /* segue com a última cena */ } } }
@@ -72,7 +72,12 @@ function aplicar(c) {
   if (!c.offline) gravar(CHAVE_ULTIMO, c);
   const it = c.itens || {}; const tv = it.tv || {};
   if (som) som.atualizar({ hora: horaNY(), clima: c.clima, tv: !!tv.ligada, volumeTv: tv.volume ?? 4, mudo: !!tv.mudo, tocando: !!(it['toca-discos'] || {}).tocando, ronrom: (c.gato || {}).acao === 'ronronando' });
+  tocarMusica();
 }
+// A música em camadas (J-pesquisa): a hora, o clima, o humor dela e onde o Jean está (a câmera nele, na casa dele).
+function tocarMusica() { if (!musica || !ultimo) return; const naDele = mapaAtual === 'casa-jean';
+  musica.atualizar({ hora: naDele ? horaCanoinhasApp() : horaNY(), clima: ultimo.clima, humor: (ultimo.pepper || {}).humor || '', onde: naDele ? 'casa-jean' : 'casa-pepper' }).catch(() => {}); }
+const horaCanoinhasApp = () => { const p = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' }).formatToParts(new Date(agoraMs())); return Number(p[0].value) + Number(p[2].value) / 60; };
 
 // A abertura (I3): a janela da casa acendendo, em pixel art, em menos de 3 segundos; um toque pula. Também é a tela de
 // carregamento: se o jogo ainda não chegou quando a animação acaba, ela fica, com o "carregando".
@@ -151,12 +156,13 @@ export function celularNaAba(aba) { if (celular) celular.abrir(aba); else abaPen
 
 async function montarMotor(d, minha) {
   const raiz = casca; mapaAtual = d.mapa_id || 'casa-pepper';
-  const [{ criarJogo }, { criarMenus }, S, { criarCelular }, { criarConstrutor }, { criarControles }, { criarFicha }] = await Promise.all([import('../jogo/cena.js'), import('../jogo/menu.js'),
-    import('../jogo/som.js'), import('../jogo/celular.js'), import('../jogo/construtor.js'), import('../jogo/controles.js'), import('../jogo/ficha.js')]);
+  const [{ criarJogo }, { criarMenus }, S, { criarCelular }, { criarConstrutor }, { criarControles }, { criarFicha }, { criarCriador }, { criarMusica }, { FUNCOES }] = await Promise.all([import('../jogo/cena.js'), import('../jogo/menu.js'),
+    import('../jogo/som.js'), import('../jogo/celular.js'), import('../jogo/construtor.js'), import('../jogo/controles.js'), import('../jogo/ficha.js'), import('../jogo/criador.js'), import('../jogo/musica.js'), import('../jogo/catalogo.js')]);
   if (minha !== montagem) return;
   som = S; ultimo = d; let diag = {}; let medida = null; let construtor = null;
   const jogo = raiz;
-  raiz.addEventListener('pointerdown', () => som.iniciar(), { once: true });
+  musica = criarMusica();
+  raiz.addEventListener('pointerdown', () => { som.iniciar(); tocarMusica(); }, { once: true });
   const nomeDe = (id) => { const it = ((motor.mapa() || {}).itens || []).find((i) => i.id === id); return it ? (NOMES_PERTO[it.modelo] || (it.luz ? 'Luz' : it.inventario ? 'Abrir' : 'Item')) : ''; };
   const botao = (b) => {
     if (b === 'A') { const id = ui.pertoAgora(); const p = id && motor.posicao(id); if (id && p) menus.abrir(id, p.x, p.y); }
@@ -168,19 +174,29 @@ async function montarMotor(d, minha) {
     aoDiagnostico: (x) => { diag = x; if (medida) medida.amostras.push(x.fps); },
     // Uma pessoa abre a ficha dela (adendo 10, item 7); o celular dela, a tela dele (item 6); o resto, o menu do item.
     aoTocar: (id, sx, sy) => { if (id.startsWith('pessoa:')) { const q = id.slice(7); if (q === 'celular') ficha.celularDela(); else ficha.abrir(q); } else menus.abrir(id, sx, sy); },
+    // O toque longo (J3): o que é, de onde veio e o estado; numa pessoa, a ficha (como o toque).
+    aoInfo: (id, sx, sy) => { if (id.startsWith('pessoa:')) { const q = id.slice(7); if (q !== 'celular') ficha.abrir(q); } else menus.info(id, sx, sy); },
     aoSoltar: async (id, x, y, espelhar, tirar) => { const c = await menus.agir({ acao: 'mover', item: id, op: tirar ? 'tirar' : 'soltar', valor: { x, y, espelhar } }); if (c) { motor.cancelarMover(); ui.movendo(false); } },
     aoSemCaminho: () => menus.aviso('Não dá pra ir por aí.'),
-    aoAndou: (x, y, andar) => { enviar({ acao: 'jean', op: 'andar', valor: { x, y, andar } }).then((c) => { if (c && c.reacao) menus.aviso('Ela viu você!'); if (c) aplicar(c); }).catch((e) => menus.aviso(e.message || 'Não deu certo agora.', 'erro')); },
+    aoAndou: (x, y, andar) => enviar({ acao: 'jean', op: 'andar', valor: { x, y, andar } }).then((c) => { if (c && c.reacao) menus.aviso('Ela viu você!'); if (c) aplicar(c); return c; }).catch((e) => { menus.aviso(e.message || 'Não deu certo agora.', 'erro'); return null; }),
     aoPerto: (id, sx, sy) => ui.perto(id, sx, sy, nomeDe(id)),
     aoBotao: botao,
     aoJoy: (on, sx, sy, dx, dy) => ui.joy(on, sx, sy, dx, dy),
     aoConstrutor: (tipo, x, y) => construtor && construtor.evento(tipo, x, y) });
-  menus = criarMenus({ raiz: jogo, motor, enviar, som });
+  // Usar um item (J3 e o adendo 10, item 1): o boneco anda até lá (pelo caminho) e, chegando, faz a ação no servidor.
+  const usar = (id, acao) => { const m = motor.mapa() || { itens: [] }; const it = m.itens.find((i) => i.id === id); if (!it) return;
+    const f = (FUNCOES[it.modelo] || []).find((x) => x[0] === acao); const alvo = (f && f[3] && m.itens.find((i) => i.modelo === f[3] && (i.andar || 0) === (it.andar || 0))) || it;
+    const u = (alvo.uso || [])[0] || { x: Math.round((alvo.x + alvo.w / 2) * 4) / 4, y: Math.min(m.fundo - 0.25, Math.round((alvo.y + alvo.d + 0.4) * 4) / 4) };
+    const fazer = async () => { const c = await menus.agir({ acao: 'jean', op: 'usar', valor: { item: id, acao } }); if (c) aplicar(c); };
+    motor.andarEFazer(u.x, u.y, fazer); };
+  menus = criarMenus({ raiz: jogo, motor, enviar, som, usar });
   ui = criarControles({ raiz: jogo, motor, aoBotao: botao });
-  construtor = criarConstrutor({ raiz: jogo, motor, enviar: (c) => menus.agir(c), aviso: menus.aviso });
+  construtor = criarConstrutor({ raiz: jogo, motor, enviar: (c) => menus.agir(c), aviso: menus.aviso, dica: (k) => menus.dica(k) });
   const folha = raiz.querySelector('[data-folha]');
+  const criador = criarCriador({ folha, enviar: (c) => menus.agir(c), ultimo: () => ultimo, aviso: (t, k) => menus.aviso(t, k), dica: (k) => menus.dica(k),
+    vestePepper: () => ((ultimo || {}).pepper || {}).veste || {}, voltar: () => celular.abrir('config') });
   ficha = criarFicha({ folha, chamar: chamarComHora, agora: agoraMs, som, aviso: (t, k) => menus.aviso(t, k), antes: () => { if (celular && celular.aberta()) celular.fechar(true); } });
-  if (modoDemo) window.jogoTeste = { motor, menus, get celular() { return celular; }, construtor, ficha };
+  if (modoDemo) window.jogoTeste = { motor, menus, get celular() { return celular; }, construtor, ficha, som, get musica() { return musica; }, tocarMusica, verMapa: (id) => verMapa(id) };
   aplicar(d); offline(!!d.offline);
   // a câmera: seguir a Pepper (na casa dela), seguir o Jean (onde ele estiver) ou livre (DEC-176)
   async function verMapa(id) { if (id === mapaAtual && motor.mapa().id === id) return; mapaAtual = id; try { aplicar(await enviar({ acao: 'cena', mapa: id })); } catch (e) { menus.aviso(e.message || 'Sem conexão agora.', 'erro'); } }
@@ -217,7 +233,7 @@ async function montarMotor(d, minha) {
   // A primeira vez (I-pesquisa 1 e 2): a apresentação curta, que dá para pular, e logo a escolha dos avisos.
   const apresentacao = (primeira) => ui.apresentacao(() => { gravar(CHAVE_INTRO, true); enviar({ acao: 'jean', op: 'config', valor: { apresentacao: true } }).catch(() => {}); if (primeira) celular.escolherAvisos(); });
   celular = criarCelular({ folha, motor, chamar: chamarComHora, enviar: (c) => menus.agir(c), som, menus, ultimo: () => ultimo, camera, verMapa, diagnostico, ligarDiagnostico,
-    reverApresentacao: () => apresentacao(false), api: endereco, aoBotoes: (on) => ui.botoes(on), aoZoomBotoes: zoomBotoes, agora: agoraMs, versao: VERSAO, aoAbas: notarAbas,
+    reverApresentacao: () => apresentacao(false), api: endereco, criador, aoSom: tocarMusica, aoBotoes: (on) => ui.botoes(on), aoZoomBotoes: zoomBotoes, agora: agoraMs, versao: VERSAO, aoAbas: notarAbas,
     pessoa: (nome) => ficha.abrir(nome), celularDela: () => ficha.celularDela(), admin: () => papel() === 'administrador', antes: () => { if (ficha.aberta()) ficha.fechar(true); },
     construir: async (id) => { await verMapa(id); construtor.abrir(); },
     tirar: (id) => { const g = (((ultimo || {}).casa || {}).guardados || []).find((x) => x.id === id); if (!g) return; motor.mover(g, true); ui.movendo(true, () => motor.girar(), () => { motor.cancelarMover(); ui.movendo(false); }); menus.aviso('Toque onde quer pôr.'); } });

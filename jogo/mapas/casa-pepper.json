@@ -1,6 +1,6 @@
 {
   "id": "casa-pepper",
-  "versao": 2,
+  "versao": 3,
   "nome": "O apartamento da Pepper (Brooklyn Heights)",
   "fuso": "America/New_York",
   "largura": 14,
@@ -823,96 +823,6 @@
       "d": 0.6
     },
     {
-      "id": "poste-1",
-      "modelo": "poste",
-      "x": 5.6,
-      "y": 11.2,
-      "w": 0.4,
-      "d": 0.4,
-      "fora": true,
-      "luz": {
-        "cor": "#ffcf7a",
-        "raio": 120,
-        "auto": "rua",
-        "altura": 44
-      }
-    },
-    {
-      "id": "poste-2",
-      "modelo": "poste",
-      "x": 15.2,
-      "y": 3.4,
-      "w": 0.4,
-      "d": 0.4,
-      "fora": true,
-      "luz": {
-        "cor": "#ffcf7a",
-        "raio": 120,
-        "auto": "rua",
-        "altura": 44
-      }
-    },
-    {
-      "id": "poste-3",
-      "modelo": "poste",
-      "x": 15.3,
-      "y": 11.4,
-      "w": 0.4,
-      "d": 0.4,
-      "fora": true,
-      "luz": {
-        "cor": "#ffcf7a",
-        "raio": 120,
-        "auto": "rua",
-        "altura": 44
-      }
-    },
-    {
-      "id": "arvore-1",
-      "modelo": "arvore",
-      "x": 9.4,
-      "y": 10.9,
-      "w": 0.8,
-      "d": 0.8,
-      "fora": true
-    },
-    {
-      "id": "arvore-2",
-      "modelo": "arvore",
-      "x": 14.9,
-      "y": 7.6,
-      "w": 0.8,
-      "d": 0.8,
-      "fora": true
-    },
-    {
-      "id": "arvore-3",
-      "modelo": "arvore",
-      "x": 1.0,
-      "y": 10.9,
-      "w": 0.8,
-      "d": 0.8,
-      "fora": true
-    },
-    {
-      "id": "banco-rua",
-      "modelo": "banco",
-      "x": 12.2,
-      "y": 10.8,
-      "w": 1.2,
-      "d": 0.5,
-      "fora": true
-    },
-    {
-      "id": "hidrante",
-      "modelo": "hidrante",
-      "x": 14.6,
-      "y": 10.4,
-      "w": 0.3,
-      "d": 0.3,
-      "fora": true
-    },
-    {
       "id": "capacho",
       "modelo": "capacho",
       "x": 3,
@@ -930,6 +840,135 @@
       "w": 0.6,
       "d": 0.6,
       "inventario": true
+    },
+    {
+      "id": "almofada-1",
+      "modelo": "almofada",
+      "x": 3.6,
+      "y": 4.1,
+      "w": 0.5,
+      "d": 0.5,
+      "z": 8,
+      "solto": true
+    },
+    {
+      "id": "almofada-2",
+      "modelo": "almofada",
+      "x": 4.4,
+      "y": 4.15,
+      "w": 0.5,
+      "d": 0.5,
+      "z": 8,
+      "solto": true
+    },
+    {
+      "id": "caneca-sala",
+      "modelo": "caneca",
+      "x": 3.1,
+      "y": 6.2,
+      "w": 0.3,
+      "d": 0.3,
+      "z": 9,
+      "solto": true
+    },
+    {
+      "id": "vela-sala",
+      "modelo": "vela",
+      "x": 3.8,
+      "y": 6.35,
+      "w": 0.3,
+      "d": 0.3,
+      "z": 9,
+      "solto": true,
+      "luz": {
+        "cor": "#ffb060",
+        "raio": 34,
+        "auto": "sala"
+      }
+    },
+    {
+      "id": "sapatos-entrada",
+      "modelo": "sapatos",
+      "x": 2.1,
+      "y": 9.3,
+      "w": 0.7,
+      "d": 0.5
+    },
+    {
+      "id": "cortina-sala",
+      "modelo": "cortina",
+      "x": 3,
+      "y": 0.05,
+      "w": 2,
+      "d": 0.2,
+      "z": 10,
+      "parede": "n",
+      "solto": true
+    },
+    {
+      "id": "cortina-lado",
+      "modelo": "cortina",
+      "x": 0.05,
+      "y": 6,
+      "w": 0.2,
+      "d": 2,
+      "z": 10,
+      "parede": "w",
+      "solto": true
+    },
+    {
+      "id": "livros-quarto",
+      "modelo": "livros",
+      "x": 8.3,
+      "y": 7.5,
+      "w": 0.6,
+      "d": 0.6
+    },
+    {
+      "id": "porta-vizinho-1",
+      "modelo": "porta_vizinho",
+      "x": -3,
+      "y": 10.05,
+      "w": 1,
+      "d": 0.2,
+      "parede": "n",
+      "fora": true
+    },
+    {
+      "id": "porta-vizinho-2",
+      "modelo": "porta_vizinho",
+      "x": 15.2,
+      "y": 10.05,
+      "w": 1,
+      "d": 0.2,
+      "parede": "n",
+      "fora": true
+    },
+    {
+      "id": "elevador",
+      "modelo": "elevador",
+      "x": 16.6,
+      "y": 10.05,
+      "w": 1.2,
+      "d": 0.2,
+      "parede": "n",
+      "fora": true
+    },
+    {
+      "id": "luz-corredor",
+      "modelo": "pendente",
+      "x": 7.7,
+      "y": 10.8,
+      "w": 0.5,
+      "d": 0.5,
+      "z": 70,
+      "solto": true,
+      "fora": true,
+      "luz": {
+        "cor": "#ffd28c",
+        "raio": 90,
+        "auto": "sempre"
+      }
     }
   ],
   "pontos": {
@@ -1024,6 +1063,21 @@
     ],
     "calcada": 2,
     "rua": 4,
-    "fundo": "tijolo"
-  }
+    "fundo": "vazio",
+    "tipo": "predio",
+    "corredor": [
+      -4,
+      10,
+      18,
+      12
+    ]
+  },
+  "alugado": true,
+  "vista": "cidade",
+  "andar_predio": 6,
+  "escada_incendio": [
+    3,
+    0,
+    "n"
+  ]
 }

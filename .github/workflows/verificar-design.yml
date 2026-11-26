@@ -25,3 +25,5 @@ jobs:
       - run: node scripts/testar_rotina.mjs
       - run: node scripts/testar_jean.mjs
       - run: node scripts/testar_app_jogo.mjs
+      - run: node scripts/testar_boneco.mjs
+      - run: node scripts/testar_toque.mjs
