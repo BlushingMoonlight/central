@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Comparação de resolução · Central</title>
+<link rel="stylesheet" href="../../assets/design/tokens.css">
+<link rel="stylesheet" href="../../assets/design/componentes.css">
+</head>
+<body>
+<main class="comparacao">
+  <h1 class="comparacao__titulo">A sala dela à noite, em duas resoluções</h1>
+  <p class="comparacao__texto">A mesma cena, do mesmo tamanho na tela. Nada muda no jogo até você escolher.</p>
+  <figure class="comparacao__quadro">
+    <canvas class="comparacao__tela" data-hoje aria-label="A versão de hoje"></canvas>
+    <figcaption class="comparacao__texto"><strong>A de hoje.</strong> O chão em blocos de 32 x 16 pixels e a Pepper com 20 x 40. Mais leve e mais "pixel".</figcaption>
+  </figure>
+  <figure class="comparacao__quadro">
+    <canvas class="comparacao__tela" data-dobro aria-label="A versão com o dobro de detalhe"></canvas>
+    <figcaption class="comparacao__texto"><strong>Com o dobro de detalhe.</strong> O chão em blocos de 64 x 32 e a Pepper com 32 x 64: o veio da madeira, as costuras do sofá, a franja do tapete, a vista da janela e o rosto dela, mais perto do Habbo.</figcaption>
+  </figure>
+  <p class="comparacao__texto">A pergunta (Q-JOGO-V3): qual fica? Responda ao revisor: "a de hoje" ou "a com o dobro de detalhe".</p>
+</main>
+<script type="module" src="resolucao.js"></script>
+</body>
+</html>

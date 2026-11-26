@@ -1,6 +1,6 @@
 {
  "id": "casa-jean",
- "versao": 1,
+ "versao": 2,
  "nome": "Casa de exemplo",
  "fuso": "America/Sao_Paulo",
  "largura": 6,
@@ -118,6 +118,15 @@
     "cor": "#ffc27a",
     "raio": 96
    }
+  },
+  {
+   "id": "portao",
+   "modelo": "portao",
+   "x": 6,
+   "y": 5,
+   "w": 3,
+   "d": 0.1,
+   "fora": true
   }
  ],
  "pontos": {
@@ -139,6 +148,13 @@
   ],
   "calcada": 2,
   "rua": 3,
-  "fundo": "grama"
- }
+  "fundo": "grama",
+  "garagem": [
+   6,
+   0,
+   9,
+   5
+  ]
+ },
+ "vista": "quintal"
 }

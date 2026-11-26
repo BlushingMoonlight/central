@@ -8,7 +8,9 @@ export const NOMES = { abajur_chao: 'Abajur', luzinhas: 'Luzinhas', lava: 'Lumin
   capacho: 'Capacho', cesto: 'Cesto', chinelos: 'Chinelos', criado: 'Criado-mudo', fogao: 'Fogão', hidrante: 'Hidrante', livros: 'Livros', lixeira: 'Lixeira', manta: 'Manta',
   mesa: 'Mesa', mesa_baixa: 'Mesa de centro', mesa_jantar: 'Mesa de jantar', micro_ondas: 'Micro-ondas', pia: 'Pia', pia_banheiro: 'Pia', planta_grande: 'Planta',
   planta_pendurada: 'Planta', planta_pequena: 'Planta', poltrona: 'Poltrona', poste: 'Poste', prateleira: 'Prateleira', pufe: 'Pufe', quadro: 'Quadro', sofa: 'Sofá',
-  tapete: 'Tapete', tapete_redondo: 'Tapete', vasinhos: 'Vasinhos', vaso_sanitario: 'Vaso sanitário', escada: 'Escada', interruptor: 'Interruptor' };
+  tapete: 'Tapete', tapete_redondo: 'Tapete', vasinhos: 'Vasinhos', vaso_sanitario: 'Vaso sanitário', escada: 'Escada', interruptor: 'Interruptor',
+  almofada: 'Almofada', caneca: 'Caneca', sapatos: 'Sapatos', vela: 'Vela', cortina: 'Cortina', lareira: 'Lareira', caixa: 'Caixa', porta_vizinho: 'Porta do vizinho', elevador: 'Elevador',
+  caixa_correio: 'Caixa de correio', portao: 'Portão' };
 export const CATALOGO = [{"grupo": "Luzes", "modelo": "abajur_chao", "w": 0.6, "d": 0.6, "luz": {"cor": "#ffc27a", "raio": 96, "auto": "sala"}},
   {"grupo": "Luzes", "modelo": "abajur_mesa", "w": 0.4, "d": 0.4, "z": 14, "solto": true, "luz": {"cor": "#ffbf73", "raio": 70, "auto": "quarto"}},
   {"grupo": "Luzes", "modelo": "luminaria_leitura", "w": 0.4, "d": 0.4, "luz": {"cor": "#ffd28c", "raio": 60, "auto": "leitura"}},
@@ -20,6 +22,12 @@ export const CATALOGO = [{"grupo": "Luzes", "modelo": "abajur_chao", "w": 0.6, "
   {"grupo": "Luzes", "modelo": "interruptor", "w": 0.2, "d": 0.5, "z": 18, "parede": "w", "solto": true},
   {"grupo": "Sala", "modelo": "sofa", "w": 3, "d": 1, "uso": [{"x": 1.5, "y": 0.5, "pose": "sentada"}]},
   {"grupo": "Sala", "modelo": "manta", "w": 1, "d": 1, "z": 10, "solto": true},
+  {"grupo": "Sala", "modelo": "almofada", "w": 0.5, "d": 0.5, "z": 8, "solto": true},
+  {"grupo": "Sala", "modelo": "caneca", "w": 0.3, "d": 0.3, "z": 9, "solto": true},
+  {"grupo": "Sala", "modelo": "vela", "w": 0.3, "d": 0.3, "z": 9, "solto": true, "luz": {"cor": "#ffb060", "raio": 34, "auto": "sala"}},
+  {"grupo": "Sala", "modelo": "cortina", "w": 2, "d": 0.2, "z": 10, "parede": "n", "solto": true},
+  {"grupo": "Sala", "modelo": "lareira", "w": 1.6, "d": 0.6, "luz": {"cor": "#ff9a4a", "raio": 80, "auto": "sala"}},
+  {"grupo": "Quarto", "modelo": "sapatos", "w": 0.7, "d": 0.5},
   {"grupo": "Sala", "modelo": "tapete", "w": 3, "d": 2, "chao": true},
   {"grupo": "Sala", "modelo": "tapete_redondo", "w": 1.4, "d": 1.4, "chao": true},
   {"grupo": "Sala", "modelo": "mesa_baixa", "w": 1.5, "d": 1},
@@ -69,6 +77,7 @@ export const CATALOGO = [{"grupo": "Luzes", "modelo": "abajur_chao", "w": 0.6, "
   {"grupo": "Rua", "modelo": "arvore", "w": 0.8, "d": 0.8, "fora": true},
   {"grupo": "Rua", "modelo": "banco", "w": 1.2, "d": 0.5, "fora": true},
   {"grupo": "Rua", "modelo": "hidrante", "w": 0.3, "d": 0.3, "fora": true},
+  {"grupo": "Rua", "modelo": "portao", "w": 3, "d": 0.1, "fora": true},
   {"grupo": "Construção", "modelo": "escada", "w": 1, "d": 2}];
 // Um item novo do catálogo em (x, y), com um id que ainda não existe no mapa.
 export function itemDoCatalogo(modelo, x, y, andar, ids) {
@@ -78,3 +87,25 @@ export function itemDoCatalogo(modelo, x, y, andar, ids) {
   if (it.uso) it.uso = it.uso.map((u) => ({ ...u, x: Math.round((u.x + x) * 100) / 100, y: Math.round((u.y + y) * 100) / 100 }));
   if (it.luz) delete it.luz.auto; return it;
 }
+
+// O que cada item sabe fazer (J3 e o adendo 10, item 1): [ação, nome, pose, onde (outro móvel, como o sofá da TV)]. O mesmo
+// catálogo está no servidor (o 68, FUNCOES), que confere; o boneco do Jean anda até lá e faz. A Pepper usa a mesma ideia
+// (os objetos anunciam o que satisfazem, no 68).
+export const FUNCOES = { cama: [['deitar', 'Deitar', 'deitada'], ['dormir', 'Dormir', 'deitada']], sofa: [['sentar', 'Sentar', 'sentada'], ['cochilar', 'Cochilar', 'sentada']],
+  poltrona: [['sentar', 'Sentar', 'sentada'], ['ler', 'Ler', 'sentada']], cadeira: [['sentar', 'Sentar', 'sentada']], pufe: [['sentar', 'Sentar', 'sentada']], banco: [['sentar', 'Sentar', 'sentada']],
+  mesa_jantar: [['sentar', 'Sentar', 'sentada'], ['comer', 'Comer', 'sentada']], mesa: [['trabalhar', 'Trabalhar', 'sentada']],
+  geladeira: [['abrir', 'Abrir', 'usando'], ['pegar', 'Pegar algo', 'usando'], ['comer', 'Comer', 'usando']], fogao: [['cozinhar', 'Cozinhar', 'usando']], pia: [['lavar', 'Lavar a louça', 'usando']],
+  cafeteira: [['cafe', 'Fazer café', 'usando']], tv: [['assistir', 'Assistir', 'sentada', 'sofa'], ['jogar', 'Jogar videogame', 'sentada', 'sofa']], toca_discos: [['ouvir', 'Ouvir', 'parada']],
+  violao: [['tocar', 'Tocar', 'sentada', 'sofa']], estante: [['livro', 'Pegar um livro', 'usando']], livros: [['ler', 'Ler', 'parada']], chinelos: [['calcar', 'Calçar', 'parada']],
+  planta_grande: [['regar', 'Regar', 'usando']], aquario: [['olhar', 'Olhar os peixes', 'parada']], caixa: [['abrir_caixa', 'Abrir', 'usando']] };
+// O filtro do catálogo por função (J2): o que o item faz na casa.
+const SENTA = new Set(Object.entries(FUNCOES).filter(([, l]) => l.some((f) => f[2] !== 'usando' && f[2] !== 'parada')).map(([k]) => k));
+const DECORA = new Set(['tapete', 'tapete_redondo', 'manta', 'almofada', 'planta_grande', 'planta_pequena', 'planta_pendurada', 'vasinhos', 'quadro', 'livros', 'prateleira', 'relogio', 'relogio_j', 'vela', 'caneca', 'cortina', 'aquario', 'sapatos']);
+export const FUNCOES_FILTRO = { luz: 'Luz', sentar: 'Sentar e deitar', guardar: 'Guardar', decorar: 'Decorar', usar: 'Usar' };
+export function funcaoDe(c) { return c.luz ? 'luz' : c.inventario ? 'guardar' : SENTA.has(c.modelo) ? 'sentar' : DECORA.has(c.modelo) ? 'decorar' : 'usar'; }
+// O material de cada item (o som do toque, J3): madeira, vidro, tecido, metal, papel ou cerâmica.
+const MATS = { tecido: ['sofa', 'poltrona', 'pufe', 'manta', 'almofada', 'tapete', 'tapete_redondo', 'cama', 'cortina', 'cesto_roupa', 'caminha_gato', 'chinelos', 'sapatos', 'capacho', 'arranhador'],
+  vidro: ['aquario', 'lava', 'tv', 'monitor', 'luzinhas', 'fita_led'], metal: ['geladeira', 'fogao', 'micro_ondas', 'cafeteira', 'pia', 'elevador', 'caixa_correio', 'poste', 'hidrante', 'pendente', 'luz_armario', 'interruptor', 'luminaria_leitura'],
+  papel: ['livros', 'quadro', 'caixa', 'prateleira'], ceramica: ['caneca', 'vaso_sanitario', 'pia_banheiro', 'banheira', 'planta_grande', 'planta_pequena', 'planta_pendurada', 'vasinhos', 'potes_gato', 'vela', 'caixa_areia'] };
+const MAT = {}; for (const [m, l] of Object.entries(MATS)) for (const k of l) MAT[k] = m;
+export const materialDe = (modelo) => MAT[modelo] || 'madeira';

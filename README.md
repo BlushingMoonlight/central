@@ -13,3 +13,6 @@ fica em `config.js`.
 - **O jogo:** `node scripts/testar_rotina.mjs` (a rotina dela: a rota, o desvio, a Morgan, as visitas e os sentidos; roda em
   todo PR), `node scripts/testar_jean.mjs` (o boneco do Jean sai pelas portas; roda em todo PR), `node scripts/testar_abertura.mjs` e
   `node scripts/testar_camera.mjs`.
+- **A parte J (a criação de personagem, a construção, o toque e o visual vivo):** `node scripts/testar_boneco.mjs` (sem navegador: o boneco em camadas,
+  a genética, a idade, a roupa do dia, as regras do construtor, a vista, a música e o som) e `node scripts/testar_toque.mjs` (o menu em círculo, o toque
+  longo, o construtor, o criador, o desempenho e a comparação de resolução em `prototipo/resolucao/`). Rodam em todo PR.

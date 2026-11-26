@@ -13,17 +13,18 @@ export const PAL = {
   cabelo: '#9c3f22', cabeloClaro: '#c9643a', cabeloEsc: '#6e2a17', blusa: '#2f6b55', blusaClara: '#4f8f6a', calca: '#3b4f8f',
   calcaEsc: '#2a3870', gato: '#d9894a', gatoClaro: '#f0b070', gatoEsc: '#9c5a2a',
 };
-const hex = (c) => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
-const mistura = (a, b, t) => { const x = hex(a), y = hex(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
-const claro = (c, t = 0.25) => mistura(c, '#fff4e0', t);
-const escuro = (c, t = 0.3) => mistura(c, '#1a1424', t);
+export const hex = (c) => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+export const mistura = (a, b, t) => { const x = hex(a), y = hex(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+export const claro = (c, t = 0.25) => mistura(c, '#fff4e0', t);
+export const escuro = (c, t = 0.3) => mistura(c, '#1a1424', t);
 
 // ---------------------------------------------------------------- o pincel
 export class Pincel {
   constructor(w, h) {
     this.w = Math.ceil(w); this.h = Math.ceil(h);
-    this.canvas = typeof OffscreenCanvas !== 'undefined' && !globalThis.document ? new OffscreenCanvas(this.w, this.h) : Object.assign(document.createElement('canvas'), { width: this.w, height: this.h });
-    this.ctx = this.canvas.getContext('2d');
+    // Sem tela nenhuma (os testes no Node), o desenho fica só nos pixels (px).
+    this.canvas = typeof OffscreenCanvas !== 'undefined' && !globalThis.document ? new OffscreenCanvas(this.w, this.h) : globalThis.document ? Object.assign(document.createElement('canvas'), { width: this.w, height: this.h }) : null;
+    this.ctx = this.canvas && this.canvas.getContext('2d');
     this.px = new Array(this.w * this.h).fill(null);
   }
   ponto(x, y, c) { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < this.w && y < this.h && c) this.px[y * this.w + x] = c; }
@@ -202,9 +203,23 @@ const M = {
   interruptor: (p) => { caixa(p, 0, 0, 0.12, 0.5, 9, PAL.creme); naFaceDir(p, 0.12, 0.18, 3, 0.14, 3, PAL.cinza); },
   cesto_roupa: (p) => { caixa(p, 0.05, 0.05, 0.5, 0.5, 9, PAL.bege, { ditherEsq: PAL.caramelo }); },
   pia_banheiro: (p) => { caixa(p, 0, 0, 0.8, 0.6, 12, PAL.madeira, { topo: PAL.creme }); losango(p, 0.2, 0.15, 0.4, 0.3, 12, PAL.azulejoEsc); },
+  // J2 e o adendo 11: o aconchego (almofada, caneca, sapatos na entrada, vela, cortina, lareira), a caixa das compras, o
+  // prédio dela (a porta do vizinho, o elevador, a caixa de correio) e o portão da casa dele
+  almofada: (p) => { caixa(p, 0.05, 0.05, 0.4, 0.4, 5, PAL.rosa, { topo: PAL.rosaClaro }); const [x, y] = P(p, 0.25, 0.25, 5); p.ponto(x, y, PAL.creme); },
+  caneca: (p) => { caixa(p, 0.08, 0.08, 0.14, 0.14, 4, PAL.creme, { topo: PAL.madeiraEsc }); const [x, y] = P(p, 0.24, 0.15, 2); p.ponto(x + 1, y, PAL.creme); },
+  sapatos: (p) => { caixa(p, 0.05, 0.05, 0.25, 0.4, 2, PAL.vinho); caixa(p, 0.38, 0.08, 0.25, 0.4, 2, PAL.azul); },
+  vela: (p) => { caixa(p, 0.06, 0.06, 0.18, 0.18, 1, PAL.cinzaClaro); caixa(p, 0.1, 0.1, 0.1, 0.1, 5, PAL.creme, { z: 1 }); },
+  cortina: (p, it) => { const n = it.parede !== 'w'; const L = n ? it.w : it.d; const pano = (a) => (n ? caixa(p, a, 0, 0.4, 0.1, 30, PAL.rosaClaro, { ditherEsq: PAL.rosa }) : caixa(p, 0, a, 0.1, 0.4, 30, PAL.rosaClaro, { ditherDir: PAL.rosa }));
+    pano(0); pano(L - 0.4); if (n) caixa(p, 0, 0, L, 0.05, 1, PAL.madeiraEsc, { z: 30 }); else caixa(p, 0, 0, 0.05, L, 1, PAL.madeiraEsc, { z: 30 }); },
+  lareira: (p, it) => { caixa(p, 0, 0, it.w, it.d, 22, PAL.telha, { topo: PAL.madeiraEsc, ditherEsq: PAL.madeiraEsc }); naFaceEsq(p, 0.3, it.d, 2, it.w - 0.6, 11, PAL.preto); naFaceEsq(p, 0.35, it.d, 2, it.w - 0.7, 2, PAL.madeiraEsc); },
+  caixa: (p) => { caixa(p, 0.05, 0.05, 0.5, 0.5, 8, PAL.caramelo, { topo: PAL.bege }); naFaceEsq(p, 0.27, 0.55, 0, 0.06, 8, PAL.bege); const [x, y] = P(p, 0.05, 0.3, 8); const [x2, y2] = P(p, 0.55, 0.3, 8); p.linha(x, y, x2, y2, PAL.madeiraEsc); },
+  porta_vizinho: (p, it) => { naFaceEsq(p, 0.1, it.d, 0, 0.8, 38, PAL.madeiraEsc); naFaceEsq(p, 0.15, it.d, 2, 0.7, 34, PAL.madeira); naFaceEsq(p, 0.42, it.d, 28, 0.16, 3, PAL.amarelo); naFaceEsq(p, 0.68, it.d, 17, 0.06, 2, PAL.amarelo); },
+  elevador: (p, it) => { naFaceEsq(p, 0, it.d, 0, it.w, 42, PAL.cinza); naFaceEsq(p, 0.08, it.d, 0, it.w - 0.16, 38, PAL.cinzaClaro); naFaceEsq(p, it.w / 2 - 0.02, it.d, 0, 0.04, 38, PAL.cinza); naFaceEsq(p, it.w / 2 - 0.1, it.d, 40, 0.2, 2, PAL.amarelo); },
+  caixa_correio: (p, it) => { caixa(p, 0, 0, it.w, it.d, 12, PAL.cinza); for (let k = 0; k < 3; k++) naFaceEsq(p, 0.08 + k * 0.25, it.d, 3, 0.18, 6, PAL.cinzaClaro); },
+  portao: (p, it) => { for (let x = 0; x < it.w - 0.05; x += 0.25) caixa(p, x, 0, 0.08, it.d, 20, PAL.madeiraEsc); caixa(p, 0, 0, it.w, it.d, 2, PAL.madeira, { z: 15 }); caixa(p, 0, 0, it.w, it.d, 2, PAL.madeira, { z: 5 }); },
 };
 // O tamanho máximo de cada modelo (a altura em px), para alocar o sprite.
-const ALT = { escada: 40, interruptor: 12, poste: 52, arvore: 56, estante: 46, geladeira: 48, guarda_roupa: 36, abajur_chao: 44, luminaria_leitura: 38, cama: 28, arranhador: 28, planta_grande: 40, tv: 24, aquario: 30, pendente: 28, cadeira: 22, sofa: 22, mesa_jantar: 30, luzinhas: 10, planta_pendurada: 8, fita_led: 6, quadro: 18 };
+const ALT = { cortina: 32, lareira: 24, porta_vizinho: 40, elevador: 46, portao: 24, escada: 40, interruptor: 12, poste: 52, arvore: 56, estante: 46, geladeira: 48, guarda_roupa: 36, abajur_chao: 44, luminaria_leitura: 38, cama: 28, arranhador: 28, planta_grande: 40, tv: 24, aquario: 30, pendente: 28, cadeira: 22, sofa: 22, mesa_jantar: 30, luzinhas: 10, planta_pendurada: 8, fita_led: 6, quadro: 18 };
 export function item(it) {
   const desenho = M[it.modelo]; if (!desenho) return null;
   const p = novoItem(it.w, it.d, (ALT[it.modelo] || 22) + 6);
@@ -212,83 +227,17 @@ export function item(it) {
 }
 export const MODELOS = Object.keys(M);
 
-// ---------------------------------------------------------------- a Pepper (16 x 32) e o gato (18 x 14)
-// Frente (sudeste, de três quartos) e costas (nordeste); os outros dois lados são espelhados (DEC-147).
-const ESTILO_PEPPER = { pele: PAL.pele, peleSombra: PAL.peleSombra, cabelo: PAL.cabelo, cabeloClaro: PAL.cabeloClaro, cabeloEsc: PAL.cabeloEsc, blusa: PAL.blusa, blusaClara: PAL.blusaClara,
-  calca: PAL.calca, calcaEsc: PAL.calcaEsc, sapato: PAL.vinho, tipo: 'longo', barba: 'nenhuma', boca: PAL.rosa, bochecha: PAL.rosaClaro };
-function pessoa(lado, quadro, pose, E = ESTILO_PEPPER) {
-  const p = new Pincel(18, 34); const C = { ...PAL, ...E, vinho: E.sapato };
-  const passo = pose === 'andando' ? [0, 1, 0, -1][quadro] : 0;
-  const sobe = pose === 'andando' && quadro % 2 === 1 ? -1 : 0;
-  const sentada = pose === 'sentada'; const y0 = (sentada ? 4 : 0) + sobe + 1; const x0 = 1;
-  // pernas
-  if (sentada) { p.retangulo(x0 + 5, y0 + 23, 3, 3, C.calca); p.retangulo(x0 + 8, y0 + 23, 3, 3, C.calcaEsc); p.retangulo(x0 + 5, y0 + 26, 3, 2, C.vinho); p.retangulo(x0 + 8, y0 + 26, 3, 2, C.vinho); }
-  else { p.retangulo(x0 + 5, y0 + 23 + Math.max(0, passo), 3, 6 - Math.abs(passo), C.calca); p.retangulo(x0 + 8, y0 + 23 + Math.max(0, -passo), 3, 6 - Math.abs(passo), C.calcaEsc);
-    p.retangulo(x0 + 5, y0 + 29, 3, 2, C.vinho); p.retangulo(x0 + 8, y0 + 29, 3, 2, C.vinho); }
-  // tronco e braços
-  p.retangulo(x0 + 4, y0 + 14, 8, 10, C.blusa); p.retangulo(x0 + 5, y0 + 15, 3, 8, C.blusaClara);
-  p.retangulo(x0 + 2, y0 + 15 + passo, 2, 7, C.blusa); p.retangulo(x0 + 12, y0 + 15 - passo, 2, 7, C.blusa);
-  p.retangulo(x0 + 2, y0 + 22 + passo, 2, 2, C.pele); p.retangulo(x0 + 12, y0 + 22 - passo, 2, 2, C.pele);
-  p.retangulo(x0 + 7, y0 + 12, 2, 2, C.peleSombra);
-  // cabeça
-  p.retangulo(x0 + 4, y0 + 4, 8, 9, C.pele); p.ponto(x0 + 4, y0 + 12, null);
-  const t = E.tipo;
-  if (lado === 'frente') {
-    p.ponto(x0 + 7, y0 + 8, C.preto); p.ponto(x0 + 10, y0 + 8, C.preto); if (E.bochecha) { p.ponto(x0 + 6, y0 + 10, C.bochecha); p.ponto(x0 + 11, y0 + 10, C.bochecha); }
-    p.retangulo(x0 + 8, y0 + 11, 2, 1, E.boca || C.peleSombra);
-    if (t === 'longo') { p.retangulo(x0 + 3, y0 + 2, 10, 4, C.cabelo); p.retangulo(x0 + 4, y0 + 1, 8, 2, C.cabeloClaro);
-      p.retangulo(x0 + 3, y0 + 5, 2, 12, C.cabelo); p.retangulo(x0 + 11, y0 + 5, 2, 9, C.cabeloEsc); p.retangulo(x0 + 6, y0 + 5, 4, 1, C.cabelo); }
-    else if (t === 'curto' || t === 'medio') { p.retangulo(x0 + 3, y0 + 2, 10, 3, C.cabelo); p.retangulo(x0 + 4, y0 + 1, 8, 2, C.cabeloClaro);
-      p.retangulo(x0 + 3, y0 + 4, 1, t === 'medio' ? 7 : 3, C.cabelo); p.retangulo(x0 + 12, y0 + 4, 1, t === 'medio' ? 7 : 3, C.cabeloEsc); }
-    else if (t === 'raspado') p.retangulo(x0 + 4, y0 + 3, 8, 2, C.cabeloEsc);
-    else if (t === 'cacheado') { p.retangulo(x0 + 2, y0 + 1, 12, 4, C.cabelo); for (const k of [3, 6, 9, 12]) p.ponto(x0 + k, y0 + 1, C.cabeloClaro); p.retangulo(x0 + 2, y0 + 4, 2, 4, C.cabelo); p.retangulo(x0 + 12, y0 + 4, 2, 4, C.cabeloEsc); }
-    const b = E.barba;
-    if (b === 'curta') p.retangulo(x0 + 5, y0 + 10, 6, 2, C.cabeloEsc); else if (b === 'cheia') { p.retangulo(x0 + 4, y0 + 9, 8, 4, C.cabelo); p.retangulo(x0 + 8, y0 + 11, 2, 1, C.peleSombra); }
-    else if (b === 'bigode') p.retangulo(x0 + 7, y0 + 10, 4, 1, C.cabeloEsc); else if (b === 'cavanhaque') p.retangulo(x0 + 7, y0 + 11, 3, 2, C.cabeloEsc);
-  } else {
-    if (t === 'longo') { p.retangulo(x0 + 3, y0 + 2, 10, 13, C.cabelo); p.retangulo(x0 + 4, y0 + 1, 8, 2, C.cabeloClaro); p.retangulo(x0 + 5, y0 + 4, 2, 9, C.cabeloClaro);
-      p.retangulo(x0 + 4, y0 + 15, 8, 3, C.cabeloEsc); }
-    else if (t === 'curto' || t === 'medio') { p.retangulo(x0 + 3, y0 + 2, 10, t === 'medio' ? 10 : 8, C.cabelo); p.retangulo(x0 + 4, y0 + 1, 8, 2, C.cabeloClaro); }
-    else if (t === 'raspado') p.retangulo(x0 + 4, y0 + 3, 8, 7, C.cabeloEsc);
-    else if (t === 'cacheado') { p.retangulo(x0 + 2, y0 + 1, 12, 10, C.cabelo); for (const k of [3, 6, 9, 12]) p.ponto(x0 + k, y0 + 3, C.cabeloClaro); }
-  }
-  p.contornar(); return p;
-}
-// A cabeça no travesseiro (dormindo): só o rosto e o cabelo, a coberta da cama faz o resto.
-function cabecaDormindo() { const p = new Pincel(12, 10); p.retangulo(2, 2, 8, 7, PAL.pele); p.retangulo(1, 1, 10, 3, PAL.cabelo); p.retangulo(1, 3, 2, 6, PAL.cabelo); p.retangulo(5, 6, 2, 1, PAL.cabeloEsc); p.retangulo(8, 6, 1, 1, PAL.cabeloEsc); p.contornar(); return p; }
-function gato(quadro) {
+// ---------------------------------------------------------------- o gato (18 x 14)
+// As pessoas (a Pepper, o Jean, as visitas) são o boneco em camadas de boneco.js (parte J1, DEC-204).
+function gato(quadro, k = 0) { // k: a posição do rabo (0, 1, 2), que mexe sozinho (adendo 11)
   const p = new Pincel(20, 16); const C = PAL;
-  if (quadro === 'dormindo') { p.retangulo(4, 8, 12, 6, C.gato); p.retangulo(5, 9, 10, 2, C.gatoClaro); p.retangulo(12, 6, 5, 5, C.gato); p.ponto(13, 5, C.gatoEsc); p.ponto(16, 5, C.gatoEsc); p.retangulo(13, 8, 3, 1, C.gatoEsc); p.retangulo(2, 12, 4, 2, C.gatoEsc); p.contornar(); return p; }
+  if (quadro === 'dormindo') { p.retangulo(4, 8, 12, 6, C.gato); p.retangulo(5, 9, 10, 2, C.gatoClaro); p.retangulo(12, 6, 5, 5, C.gato); p.ponto(13, 5, C.gatoEsc); p.ponto(16, 5, C.gatoEsc); p.retangulo(13, 8, 3, 1, C.gatoEsc); p.retangulo(2 - (k === 1 ? 1 : 0), 12 - (k === 2 ? 1 : 0), 4, 2, C.gatoEsc); p.contornar(); return p; }
   const a = quadro === 'andando1' ? 1 : quadro === 'andando2' ? -1 : 0;
   p.retangulo(4, 7, 10, 5, C.gato); p.retangulo(5, 8, 3, 1, C.gatoEsc); p.retangulo(9, 8, 2, 1, C.gatoEsc);
   p.retangulo(5 + a, 12, 2, 3, C.gato); p.retangulo(11 - a, 12, 2, 3, C.gato);
   p.retangulo(12, 3, 6, 6, C.gato); p.ponto(12, 2, C.gato); p.ponto(17, 2, C.gato); p.ponto(14, 5, C.preto); p.ponto(16, 5, C.preto); p.ponto(15, 7, C.rosaClaro);
-  p.retangulo(1, 5 - a, 3, 2, C.gatoEsc); p.retangulo(2, 7, 2, 2, C.gato);
+  p.retangulo(1, 5 - a - (k === 1 ? 1 : k === 2 ? -1 : 0), 3, 2, C.gatoEsc); p.retangulo(2, 7, 2, 2, C.gato);
   p.contornar(); return p;
-}
-// O Jean (DEC-176): a mesma pessoa de pixel, com a aparência que ele escolhe (listas fechadas, como no servidor).
-export const APARENCIA = {
-  pele: ['#f6d3b8', '#f2c3a0', '#d9a27a', '#a9714d', '#6e4630'],
-  cabelo: { curto: 'Curto', raspado: 'Raspado', medio: 'Médio', cacheado: 'Cacheado', careca: 'Careca' },
-  cor_cabelo: { preto: '#2a1f24', castanho: '#5a3a26', loiro: '#d9b45a', ruivo: '#9c3f22', grisalho: '#a9a4b3' },
-  barba: { nenhuma: 'Sem barba', curta: 'Curta', cheia: 'Cheia', bigode: 'Bigode', cavanhaque: 'Cavanhaque' },
-  camisa: { azul: '#3b6fb5', verde: '#2f6b55', vinho: '#6e2a3a', preta: '#2a2633', branca: '#e8e4ec', amarela: '#e0b440' },
-  calca: { jeans: '#3b4f8f', preta: '#2a2633', bege: '#c9b08a', cinza: '#6f6a7a' },
-  sapato: { branco: '#e8e4ec', preto: '#1a1424', marrom: '#6e4630' },
-};
-export function estiloJean(ap = {}) {
-  const A = APARENCIA; const pele = A.pele[ap.pele] || A.pele[1]; const cab = A.cor_cabelo[ap.cor_cabelo] || A.cor_cabelo.castanho;
-  const cam = A.camisa[ap.camisa] || A.camisa.azul; const cal = A.calca[ap.calca] || A.calca.jeans;
-  return { pele, peleSombra: escuro(pele, 0.15), cabelo: cab, cabeloClaro: claro(cab, 0.2), cabeloEsc: escuro(cab, 0.25), blusa: cam, blusaClara: claro(cam, 0.2), calca: cal, calcaEsc: escuro(cal, 0.2),
-    sapato: A.sapato[ap.sapato] || A.sapato.branco, tipo: A.cabelo[ap.cabelo] ? ap.cabelo : 'curto', barba: A.barba[ap.barba] ? ap.barba : 'nenhuma', boca: escuro(pele, 0.3) };
-}
-export function jean(ap) {
-  const E = estiloJean(ap); const s = {};
-  for (const lado of ['frente', 'costas']) {
-    for (const pose of ['parada', 'sentada']) { const p = pessoa(lado, 0, pose, E); s[`jean-${lado}-${pose}`] = p; s[`jean-${lado}-${pose}-esp`] = p.espelhar(); }
-    for (let q = 0; q < 4; q++) { const p = pessoa(lado, q, 'andando', E); s[`jean-${lado}-andando${q}`] = p; s[`jean-${lado}-andando${q}-esp`] = p.espelhar(); }
-  }
-  return s;
 }
 // Os balões em cima da cabeça.
 function balao(tipo) {
@@ -346,30 +295,20 @@ export function detalhes() {
   return s;
 }
 
-// Todos os sprites de pessoa e de bicho, pela chave que a cena usa.
+// Os sprites de bicho, dos balões e da Morgan, pela chave que a cena usa (as outras pessoas vêm de boneco.js).
 export function personagens() {
   const s = {};
-  for (const lado of ['frente', 'costas']) {
-    for (const pose of ['parada', 'sentada']) { const p = pessoa(lado, 0, pose); s[`pepper-${lado}-${pose}`] = p; s[`pepper-${lado}-${pose}-esp`] = p.espelhar(); }
-    for (let q = 0; q < 4; q++) { const p = pessoa(lado, q, 'andando'); s[`pepper-${lado}-andando${q}`] = p; s[`pepper-${lado}-andando${q}-esp`] = p.espelhar(); }
-  }
-  s['pepper-dormindo'] = cabecaDormindo();
   for (const q of ['parado', 'andando1', 'andando2', 'dormindo']) { const p = gato(q); s[`gato-${q}`] = p; s[`gato-${q}-esp`] = p.espelhar(); }
+  // o rabo que mexe sozinho, parado ou dormindo (adendo 11): mais duas posições
+  for (const q of ['parado', 'dormindo']) for (const k of [1, 2]) { const p = gato(q, k); s[`gato-${q}-r${k}`] = p; s[`gato-${q}-r${k}-esp`] = p.espelhar(); }
   for (const b of BALOES) s['balao-' + b] = balao(b);
-  // a Morgan (uma criança, menor que a Pepper) e as duas visitas (pessoas genéricas, de roupa diferente), parte B
+  // a Morgan (uma criança, menor que a Pepper), parte B
   for (const lado of ['frente', 'costas']) {
     for (const pose of ['parada', 'sentada']) { const p = crianca(lado, 0, pose); s[`morgan-${lado}-${pose}`] = p; s[`morgan-${lado}-${pose}-esp`] = p.espelhar(); }
     for (let q = 0; q < 4; q++) { const p = crianca(lado, q, 'andando'); s[`morgan-${lado}-andando${q}`] = p; s[`morgan-${lado}-andando${q}-esp`] = p.espelhar(); }
-    VISITAS.forEach((E, k) => {
-      for (const pose of ['parada', 'sentada']) { const p = pessoa(lado, 0, pose, E); s[`visita${k}-${lado}-${pose}`] = p; s[`visita${k}-${lado}-${pose}-esp`] = p.espelhar(); }
-      for (let q = 0; q < 4; q++) { const p = pessoa(lado, q, 'andando', E); s[`visita${k}-${lado}-andando${q}`] = p; s[`visita${k}-${lado}-andando${q}-esp`] = p.espelhar(); }
-    });
   }
   return s;
 }
-// As visitas: duas aparências genéricas (ninguém de verdade), só para ver quem chegou.
-const VISITAS = [estiloJean({ pele: 2, cabelo: 'cacheado', cor_cabelo: 'preto', camisa: 'vinho', calca: 'preta', sapato: 'preto' }),
-  estiloJean({ pele: 0, cabelo: 'medio', cor_cabelo: 'loiro', camisa: 'amarela', calca: 'bege', sapato: 'marrom' })];
 // A Morgan: uma criança de uns 8 anos, 12 x 24, de rabo de cavalo e vestido (o mesmo jeito de desenhar da Pepper, menor).
 function crianca(lado, quadro, pose) {
   const p = new Pincel(14, 26); const C = PAL; const roupa = C.amarelo, roupaClara = claro(C.amarelo, 0.35), cabelo = '#5a3320', cabeloClaro = '#7d4a2e';

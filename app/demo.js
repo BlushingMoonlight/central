@@ -277,8 +277,10 @@ async function jogoDemo(c) {
       geladeira: { inventario: { compartimentos: [{ nome: 'Prateleira de cima', capacidade: 8, itens: { Leite: 2, Ovos: 6 } }, { nome: 'Prateleira do meio', capacidade: 8, itens: { Frutas: 4 } }] } } }); }
   const E = jogoEstado; let reacao = null; const J = JEAN_DEMO;
   if (c.acao === 'jean') { const v = c.valor || {};
-    if (c.op === 'andar') { if (c.mapa !== J.mapa_id) return { ok: false, erro: 'Você não está nesse mapa.' }; Object.assign(J, { x: v.x, y: v.y, andar: v.andar || 0 }); }
-    else if (c.op === 'config') Object.assign(J.config, v); else if (c.op === 'aparencia') Object.assign(J.aparencia, v);
+    if (c.op === 'andar') { if (c.mapa !== J.mapa_id) return { ok: false, erro: 'Você não está nesse mapa.' }; Object.assign(J, { x: v.x, y: v.y, andar: v.andar || 0, acao: null }); }
+    else if (c.op === 'config') Object.assign(J.config, v); else if (c.op === 'aparencia') J.aparencia = { ...v, criado_em: J.aparencia.criado_em || new Date().toISOString() };
+    else if (c.op === 'usar') { const it = (J.mapa_id === 'casa-jean' ? CASA_JEAN_DEMO : mapaDemo).itens.find((i) => i.id === v.item); if (!it) return { ok: false, erro: 'Esse item não existe.' }; // parte J: sentar, deitar, usar
+      J.acao = { item: it.id, acao: v.acao, pose: /deitar|dormir/.test(v.acao) ? 'deitada' : /sentar|ler|assistir|jogar|tocar|comer|trabalhar|cochilar/.test(v.acao) ? 'sentada' : 'usando' }; }
     else if (c.op === 'viajar') { if (v.para === J.mapa_id) return { ok: false, erro: 'Você já está aí.' }; J.mapa_id = v.para; J.x = null; } }
   if (c.acao === 'construir') { const v = c.valor || {}; const m = c.mapa === 'casa-jean' ? CASA_JEAN_DEMO : mapaDemo; if (v.base !== m.versao) return { ok: false, erro: 'O mapa mudou enquanto você construía. Abra o construtor de novo.' };
     if (!v.mapa.aberturas.some((a) => a.saida)) return { ok: false, erro: 'A casa precisa de uma porta para a rua (marque uma porta como saída).' };
@@ -292,8 +294,9 @@ async function jogoDemo(c) {
   if (c.acao === 'mover' && c.op === 'soltar') { const it = mapaDemo.itens.find((i) => i.id === c.item); if (it) { it.x = c.valor.x; it.y = c.valor.y; mapaDemo.versao = (mapaDemo.versao || 1) + 1; } }
   const { tv: tvDaVez, ...pepper } = ATIVIDADES[Math.floor(Date.now() / 25000) % ATIVIDADES.length];
   const itensDaVez = tvDaVez ? { ...E.itens, tv: { ...E.itens.tv, ...tvDaVez } } : E.itens;
-  return { mapa_id: naJean ? 'casa-jean' : 'casa-pepper', mapa: naJean ? CASA_JEAN_DEMO : mapaDemo, pepper: { ...pepper, necessidades: { fome: 62, energia: 48, higiene: 80, bexiga: 70, diversao: 55, social: 66, conforto: 74, ambiente: 68, saude: 92, estresse: 30 } },
-    itens: naJean ? { 'abajur-chao': { ligada: true, brilho: 85 } } : itensDaVez, gato: E.gato, casa: E.casa, clima: 'chuva', reacao, avisos: [], jean: { ...J }, agora: new Date().toISOString() };
+  return { mapa_id: naJean ? 'casa-jean' : 'casa-pepper', mapa: naJean ? CASA_JEAN_DEMO : mapaDemo, pepper: { ...pepper, veste: { ocasiao: 'casa', troca: {}, acessorios: [], motivo: 'em casa' }, necessidades: { fome: 62, energia: 48, higiene: 80, bexiga: 70, diversao: 55, social: 66, conforto: 74, ambiente: 68, saude: 92, estresse: 30 } },
+    itens: naJean ? { 'abajur-chao': { ligada: true, brilho: 85 } } : itensDaVez, gato: E.gato, casa: { ...E.casa, aconchego: { sala: 78, cozinha: 55, quarto: 64 } }, clima: 'chuva', reacao, avisos: [],
+    jean: { ...J, veste: { ocasiao: 'casa', troca: {}, acessorios: [] } }, agora: new Date().toISOString() };
 }
 // O celular do jogo na demonstração (o 69 de verdade lê o banco).
 // A parte I (DEC-199 a DEC-202): o papel (?papel=jogador faz o jogador comum), o celular dela, a ficha, a exportação e o reportar.

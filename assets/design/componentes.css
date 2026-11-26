@@ -232,3 +232,26 @@ a.jogo__mini { display: inline-flex; align-items: center; justify-content: cente
 .janela-jogo { margin: var(--esp-4) 0; padding: var(--esp-4); background: var(--superficie); border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pequeno); }
 .janela-jogo h1 { font-family: ui-monospace, monospace; color: var(--destaque); }
 html[data-app-jogo] body { background: var(--jogo-fundo); }
+/* Parte J (DEC-204 a DEC-206): o menu em círculo (a ação principal no centro), a ficha do toque longo, a criação de
+   personagem (o boneco grande, que se toca, e os parentes) e a busca do catálogo no construtor. */
+.jogo__roda { position: absolute; z-index: 3; width: 0; height: 0; }
+.jogo__roda-b { position: absolute; transform: translate(-50%, -50%); min-width: var(--alvo-secao); min-height: var(--alvo-secao); padding: 0 var(--esp-2); background: var(--jogo-janela); color: var(--jogo-texto);
+  border: var(--jogo-linha) solid var(--jogo-borda); border-radius: var(--raio-pilula); font: var(--texto-15) ui-monospace, monospace; white-space: nowrap; }
+.jogo__roda-b--centro { left: 0; top: 0; background: var(--jogo-sel); font-weight: var(--peso-forte); }
+.jogo__roda-b:focus-visible { outline: var(--jogo-linha) solid var(--jogo-texto); outline-offset: var(--esp-1); }
+.jogo__info { width: min(80%, var(--camera)); }
+.jogo__criador { display: flex; flex-direction: column; align-items: center; gap: var(--esp-2); }
+.jogo__boneco { width: calc(var(--esp-5) * 4 + var(--esp-1)); height: calc(var(--esp-5) * 8 + var(--esp-2)); image-rendering: pixelated; background: var(--jogo-sel); border-radius: var(--raio-pequeno); }
+.jogo__mini-boneco { width: calc(var(--esp-5) + var(--esp-4)); height: calc(var(--esp-6) * 2 + var(--esp-4)); image-rendering: pixelated; background: var(--jogo-sel); border-radius: var(--raio-pequeno); }
+.jogo__parentes { display: flex; flex-wrap: wrap; gap: var(--esp-3); justify-content: center; padding: var(--esp-2) 0; }
+.jogo__parentes figure { display: flex; flex-direction: column; align-items: center; margin: 0; }
+.jogo__cor--livre { position: relative; overflow: hidden; background: var(--jogo-sel); }
+.jogo__cor--livre input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+.jogo__busca { width: 100%; min-height: var(--alvo-secao); background: var(--jogo-sel); color: var(--jogo-texto); border: var(--linha-fina) solid var(--jogo-texto-2); border-radius: var(--raio-pequeno);
+  font: var(--texto-16) ui-monospace, monospace; padding: 0 var(--esp-2); }
+/* A comparação de resolução (adendo 11, a Q-JOGO-V3): as duas versões da mesma cena, do mesmo tamanho, com os pixels inteiros. */
+.comparacao { max-width: var(--largura-max); margin: 0 auto; padding: var(--esp-4); display: grid; gap: var(--esp-4); }
+.comparacao__titulo { font: var(--peso-forte) var(--texto-20) var(--fonte); }
+.comparacao__texto { font: var(--texto-16) var(--fonte); }
+.comparacao__quadro { margin: 0; display: grid; gap: var(--esp-2); }
+.comparacao__tela { max-width: 100%; image-rendering: pixelated; border-radius: var(--raio-pequeno); background: var(--jogo-fundo); }
